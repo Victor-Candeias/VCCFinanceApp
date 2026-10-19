@@ -131,23 +131,28 @@ Fixada a 19/10/2026 a partir do ambiente instalado no PC de desenvolvimento e da
 | Componente | Versão | Estado |
 |---|---|---|
 | Android Studio | 2026.1.3 (build 261.26222.65) | Instalado |
-| JDK do Gradle | 17 (Temurin 17.0.20.1, `%USERPROFILE%\.jdks\jdk-17.0.20.1+1`) | Instalado |
-| Gradle Wrapper | 9.4.1 | Instalado |
-| AGP | 9.2.1 | Em cache local |
-| `compileSdk` / `targetSdk` | 37 | Plataforma `android-37.0` instalada |
+| JDK do Gradle | 17 (Temurin 17.0.20.1, `%USERPROFILE%\.jdks\jdk-17.0.20.1+1`) | Instalado; fixado em `gradle/gradle-daemon-jvm.properties` |
+| Gradle Wrapper | 9.4.1 | Confirmado |
+| AGP | 9.2.1 | Confirmado |
+| `compileSdk` / `targetSdk` | 37 | Confirmado (plataforma `android-37.0`) |
 | `minSdk` | 26 | — |
 | SDK Build Tools | 36.0.0 | Instalado |
-| Kotlin (KGP e plugin Compose) | 2.4.20 | Em cache local |
-| KSP | 2.3.12 | Em cache local |
-| Hilt | 2.60.1 | Em cache local |
-| Compose BOM | 2026.09.00 | Em cache local |
-| Room | 2.8.5 | Em cache local |
-| Navigation Compose | 2.10.2 | Em cache local |
-| Activity Compose | 1.13.0 | Em cache local |
-| Lifecycle | 2.10.0 | Em cache local |
-| Hilt Navigation Compose 1.4.0, DataStore 1.2.1, Biometric 1.1.0 | — | Não estão em cache; transferidas no primeiro sync |
+| Kotlin (KGP e plugin Compose) | 2.4.20 | Confirmado |
+| KSP | 2.3.12 | Confirmado |
+| Hilt | 2.60.1 | Confirmado |
+| Compose BOM | 2026.09.00 | Confirmado |
+| Room | 2.8.5 | Confirmado |
+| Navigation Compose | 2.10.2 | Confirmado |
+| Activity Compose | 1.13.0 | Confirmado |
+| Lifecycle | 2.10.0 | Confirmado |
+| Hilt Navigation Compose | 1.4.0 | Confirmado |
+| DataStore | 1.2.1 | Confirmado |
+| Biometric | 1.1.0 | Confirmado |
+| Complementares: Core KTX 1.19.1, Coroutines 1.11.0, kotlinx-serialization-json 1.11.0, JUnit 4.13.2, AndroidX Test JUnit 1.3.0, Espresso 3.7.0 | — | Confirmado |
 
-> **Notas:** o Android Studio usa por omissão a JBR 25 (`JAVA_HOME`); o ficheiro `gradle/gradle-daemon-jvm.properties` (`toolchainVersion=17`) obriga o daemon Gradle a usar um JDK 17 instalado localmente, mesmo que o launcher arranque com outra JVM. Em alternativa, configurar o **Gradle JDK = 17** (Settings → Build Tools → Gradle). A combinação Kotlin 2.4.20 + KSP 2.3.12 + Hilt 2.60.1 é a única ainda não comprovada em conjunto: confirmar com `./gradlew assembleDebug` no Sprint 1 e, se falhar, ajustar apenas estas versões.
+> **Notas:** o Android Studio usa por omissão a JBR 25 (`JAVA_HOME`); o ficheiro `gradle/gradle-daemon-jvm.properties` (`toolchainVersion=17`) obriga o daemon Gradle a usar um JDK 17 instalado localmente, mesmo que o launcher arranque com outra JVM. Em alternativa, configurar o **Gradle JDK = 17** (Settings → Build Tools → Gradle).
+>
+> **Confirmação (S1-03, 19/10/2026):** `./gradlew :app:assembleDebug :app:testDebugUnitTest` passou com todas as bibliotecas do catálogo aplicadas em conjunto (KSP a gerar componentes Hilt, `@HiltViewModel` e `RoomDatabase_Impl`; rotas tipadas com Kotlin Serialization; DataStore; Biometric). A combinação Kotlin 2.4.20 + KSP 2.3.12 + Hilt 2.60.1 fica comprovada; não foi necessário ajustar versões. A fonte de verdade das versões é `gradle/libs.versions.toml`.
 
 ### `settings.gradle.kts`
 
@@ -844,3 +849,4 @@ A primeira milestone deve produzir um **projeto Android Studio compilável** com
 | 19/10/2026 | Nome da app: **VCCFinanceApp**; classe `Application`: `VCCFinanceApplication`. |
 | 19/10/2026 | Todas as 12 tabelas de §5 entram na versão 1 do schema Room. |
 | 19/10/2026 | Matriz de versões fixada a partir do ambiente local (§4); Kotlin/KSP/Hilt a confirmar no primeiro build. |
+| 19/10/2026 | Matriz de versões confirmada com `assembleDebug` (S1-03), sem ajustes. |
