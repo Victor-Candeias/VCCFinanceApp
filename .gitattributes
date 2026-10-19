@@ -1,0 +1,9 @@
+* text=auto
+
+# Scripts do Gradle Wrapper com fins de linha adequados à plataforma.
+gradlew text eol=lf
+*.bat text eol=crlf
+
+*.jar binary
+*.png binary
+*.webp binary

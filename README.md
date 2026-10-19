@@ -147,7 +147,7 @@ Fixada a 19/10/2026 a partir do ambiente instalado no PC de desenvolvimento e da
 | Lifecycle | 2.10.0 | Em cache local |
 | Hilt Navigation Compose 1.4.0, DataStore 1.2.1, Biometric 1.1.0 | — | Não estão em cache; transferidas no primeiro sync |
 
-> **Notas:** o Android Studio usa por omissão a JBR 25 (`JAVA_HOME`); configurar o **Gradle JDK = 17** (Settings → Build Tools → Gradle). A combinação Kotlin 2.4.20 + KSP 2.3.12 + Hilt 2.60.1 é a única ainda não comprovada em conjunto: confirmar com `./gradlew assembleDebug` no Sprint 1 e, se falhar, ajustar apenas estas versões.
+> **Notas:** o Android Studio usa por omissão a JBR 25 (`JAVA_HOME`); o ficheiro `gradle/gradle-daemon-jvm.properties` (`toolchainVersion=17`) obriga o daemon Gradle a usar um JDK 17 instalado localmente, mesmo que o launcher arranque com outra JVM. Em alternativa, configurar o **Gradle JDK = 17** (Settings → Build Tools → Gradle). A combinação Kotlin 2.4.20 + KSP 2.3.12 + Hilt 2.60.1 é a única ainda não comprovada em conjunto: confirmar com `./gradlew assembleDebug` no Sprint 1 e, se falhar, ajustar apenas estas versões.
 
 ### `settings.gradle.kts`
 
