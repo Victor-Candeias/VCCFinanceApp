@@ -50,7 +50,7 @@ A **VCCFinanceApp** permite gerir contas bancárias, cartões de refeição, din
 
 Módulos iniciais:
 
-1. `:app` — inicialização, `MainActivity`, `FinanceApplication`, navegação.
+1. `:app` — inicialização, `MainActivity`, `VCCFinanceApplication`, navegação.
 2. `:core:model` — modelos e enums independentes de Android.
 3. `:core:database` — Room, DAOs, entidades, converters e migrations.
 4. `:core:security` — PIN, biometria, Keystore e sessão.
@@ -82,8 +82,8 @@ VCCFinanceApp/
 │   │   ├── VCCFinanceDatabase.kt
 │   │   ├── DatabaseModule.kt
 │   │   ├── converters/FinanceConverters.kt
-│   │   ├── entity/{AccountEntity,TransactionEntity,CategoryEntity}.kt
-│   │   └── dao/{AccountDao,TransactionDao,CategoryDao}.kt
+│   │   ├── entity/   (uma entidade por tabela da v1 — ver §5)
+│   │   └── dao/      (um DAO por entidade)
 │   ├── data/src/main/java/pt/vcc/financeapp/core/data/
 │   │   ├── repository/
 │   │   ├── mapper/
@@ -124,7 +124,30 @@ Não permitir que `:core:model` dependa de Android ou de Room. Idealmente, `:cor
 
 ## 4. Configuração Gradle
 
-> **Nota de compatibilidade:** as versões abaixo são **exemplificativas** e precisam de ser verificadas em conjunto com o Android Studio, Gradle, AGP, Kotlin, KSP, Hilt e SDK instalados. Não constituem uma combinação comprovadamente compilada. Fixar uma matriz validada no primeiro commit e usar Gradle Wrapper.
+### Matriz de versões fixada
+
+Fixada a 19/10/2026 a partir do ambiente instalado no PC de desenvolvimento e da [tabela de compatibilidade do AGP 9.2](https://developer.android.com/build/releases/agp-9-2-0-release-notes) (Gradle ≥ 9.4.1, Build Tools ≥ 36.0.0, JDK 17, KGP ≥ 2.2.10, API máx. 37).
+
+| Componente | Versão | Estado |
+|---|---|---|
+| Android Studio | 2026.1.3 (build 261.26222.65) | Instalado |
+| JDK do Gradle | 17 (Temurin 17.0.20.1, `%USERPROFILE%\.jdks\jdk-17.0.20.1+1`) | Instalado |
+| Gradle Wrapper | 9.4.1 | Instalado |
+| AGP | 9.2.1 | Em cache local |
+| `compileSdk` / `targetSdk` | 37 | Plataforma `android-37.0` instalada |
+| `minSdk` | 26 | — |
+| SDK Build Tools | 36.0.0 | Instalado |
+| Kotlin (KGP e plugin Compose) | 2.4.20 | Em cache local |
+| KSP | 2.3.12 | Em cache local |
+| Hilt | 2.60.1 | Em cache local |
+| Compose BOM | 2026.09.00 | Em cache local |
+| Room | 2.8.5 | Em cache local |
+| Navigation Compose | 2.10.2 | Em cache local |
+| Activity Compose | 1.13.0 | Em cache local |
+| Lifecycle | 2.10.0 | Em cache local |
+| Hilt Navigation Compose 1.4.0, DataStore 1.2.1, Biometric 1.1.0 | — | Não estão em cache; transferidas no primeiro sync |
+
+> **Notas:** o Android Studio usa por omissão a JBR 25 (`JAVA_HOME`); configurar o **Gradle JDK = 17** (Settings → Build Tools → Gradle). A combinação Kotlin 2.4.20 + KSP 2.3.12 + Hilt 2.60.1 é a única ainda não comprovada em conjunto: confirmar com `./gradlew assembleDebug` no Sprint 1 e, se falhar, ajustar apenas estas versões.
 
 ### `settings.gradle.kts`
 
@@ -141,20 +164,20 @@ include(":app", ":core:model", ":core:database", ":core:data",
         ":core:security", ":core:designsystem", ":feature:finance")
 ```
 
-### `gradle/libs.versions.toml` — exemplo inicial
+### `gradle/libs.versions.toml` — versões fixadas
 
 ```toml
 [versions]
 agp = "9.2.1"
-kotlin = "2.3.21"
-ksp = "2.3.9"
+kotlin = "2.4.20"
+ksp = "2.3.12"
 composeBom = "2026.09.00"
 room = "2.8.5"
 navigation = "2.10.2"
 hilt = "2.60.1"
 hiltNavigation = "1.4.0"
 activityCompose = "1.13.0"
-lifecycle = "2.11.0"
+lifecycle = "2.10.0"
 datastore = "1.2.1"
 biometric = "1.1.0"
 
@@ -232,7 +255,9 @@ Cada módulo Android Library requer o seu `build.gradle.kts`, `namespace`, SDK, 
 
 ## 5. Modelo de dados
 
-### Tabelas previstas
+### Tabelas da v1
+
+**Decisão:** todas as tabelas abaixo entram na versão 1 do schema Room, para evitar migrations logo nas primeiras iterações.
 
 | Tabela | Função |
 |---|---|
@@ -358,7 +383,12 @@ data class FinancialConnectionEntity(
 
 ```kotlin
 @Database(
-    entities = [AccountEntity::class, TransactionEntity::class, CategoryEntity::class],
+    entities = [
+        AccountEntity::class, TransactionEntity::class, CategoryEntity::class,
+        MerchantEntity::class, BudgetEntity::class, RecurringTransactionEntity::class,
+        FinancialConnectionEntity::class, SyncHistoryEntity::class, ImportBatchEntity::class,
+        TransactionRuleEntity::class, AttachmentEntity::class, AccountBalanceSnapshotEntity::class
+    ],
     version = 1,
     exportSchema = true
 )
@@ -367,6 +397,7 @@ abstract class VCCFinanceDatabase : RoomDatabase() {
     abstract fun accountDao(): AccountDao
     abstract fun transactionDao(): TransactionDao
     abstract fun categoryDao(): CategoryDao
+    // Um DAO por cada uma das restantes entidades (Sprint 2).
 }
 ```
 
@@ -382,6 +413,8 @@ class FinanceConverters {
     @TypeConverter fun stringToSource(v: String): TransactionSource = TransactionSource.valueOf(v)
     @TypeConverter fun statusToString(v: TransactionStatus): String = v.name
     @TypeConverter fun stringToStatus(v: String): TransactionStatus = TransactionStatus.valueOf(v)
+    @TypeConverter fun connectionStatusToString(v: ConnectionStatus): String = v.name
+    @TypeConverter fun stringToConnectionStatus(v: String): ConnectionStatus = ConnectionStatus.valueOf(v)
 }
 ```
 
@@ -747,13 +780,13 @@ Adicionar testes unitários (cálculo financeiro e regras), testes de Room em di
 ### Sprint 1 — Fundação
 - [ ] Criar projeto **VCCFinanceApp** no Android Studio.
 - [ ] Definir package `pt.vcc.financeapp` e Gradle Wrapper.
-- [ ] Validar matriz AGP/Kotlin/KSP/Hilt/SDK.
+- [ ] Confirmar a matriz de versões fixada (§4) com `./gradlew assembleDebug`.
 - [ ] Criar os sete módulos Gradle.
 - [ ] Configurar Compose, Material 3, Hilt e Navigation.
 - [ ] Compilar e executar no emulador.
 
 ### Sprint 2 — Persistência
-- [ ] Criar entidades Account, Transaction e Category.
+- [ ] Criar as entidades das 12 tabelas da v1 (§5).
 - [ ] Criar TypeConverters e DAOs.
 - [ ] Configurar `VCCFinanceDatabase` e injeção Hilt.
 - [ ] Exportar schema e testar migrations.
@@ -803,3 +836,11 @@ Desde o início: UUIDs, migrations, isolamento por camadas, interfaces de integr
 A primeira milestone deve produzir um **projeto Android Studio compilável** com os sete módulos, Gradle validado, Hilt, Room, Navigation Compose, dashboard simples, lista/criação de contas e testes básicos. Os blocos de código deste documento são **esqueletos de arquitetura**, não um projeto integral já compilado: faltam imports, `build.gradle.kts` de cada biblioteca, recursos, DTOs, modelos de domínio, algumas implementações de segurança e testes.
 
 **Próxima ação recomendada:** gerar o projeto Android Studio completo de base, abrir no Android Studio, executar `./gradlew assembleDebug` e corrigir qualquer incompatibilidade antes de implementar funcionalidades financeiras adicionais.
+
+## 18. Registo de decisões
+
+| Data | Decisão |
+|---|---|
+| 19/10/2026 | Nome da app: **VCCFinanceApp**; classe `Application`: `VCCFinanceApplication`. |
+| 19/10/2026 | Todas as 12 tabelas de §5 entram na versão 1 do schema Room. |
+| 19/10/2026 | Matriz de versões fixada a partir do ambiente local (§4); Kotlin/KSP/Hilt a confirmar no primeiro build. |
