@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">VCCFinanceApp</string>
+    <string name="nav_dashboard">Início</string>
+    <string name="nav_accounts">Contas</string>
+    <string name="nav_transactions">Movimentos</string>
+    <string name="nav_reports">Relatórios</string>
+    <string name="nav_more">Mais</string>
 </resources>

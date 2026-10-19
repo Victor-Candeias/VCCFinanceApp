@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="finance_dashboard_title">Início</string>
+    <string name="finance_dashboard_message">Resumo de saldos, receitas e despesas.</string>
+    <string name="finance_dashboard_view_accounts">Ver contas</string>
+    <string name="finance_accounts_title">Contas</string>
+    <string name="finance_accounts_empty">Ainda não existem contas.</string>
+    <string name="finance_transactions_title">Movimentos</string>
+    <string name="finance_transactions_empty">Ainda não existem movimentos.</string>
+    <string name="finance_reports_title">Relatórios</string>
+    <string name="finance_reports_empty">Os relatórios ficam disponíveis quando houver movimentos.</string>
+    <string name="finance_settings_title">Mais</string>
+    <string name="finance_settings_empty">Definições, segurança, importação e exportação.</string>
+</resources>
