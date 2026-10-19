@@ -37,5 +37,11 @@ created: {{created}}
 
 ## Impacted Files
 
+<!-- Guidelines:
+- One row per test file, no duplicates
+- Action column: Create, Modify, Delete
+- Purpose column: what the file tests
+-->
+
 | File | Action | Purpose |
 |------|--------|---------|
