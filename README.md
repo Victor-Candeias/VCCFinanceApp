@@ -528,6 +528,8 @@ object DatabaseModule {
 
 Não usar `fallbackToDestructiveMigration()`. Exportar schemas Room, versionar migrations e executar testes de migração.
 
+**Schema e migrations (S2-04):** o plugin Gradle `androidx.room` exporta o schema para `core/database/schemas/` (versionado em git e exposto como asset do `androidTest`). Ao subir `VCCFinanceDatabase.VERSION`: compilar para gerar o novo `<versão>.json`, acrescentar a `Migration` a `VCCFinanceMigrations.ALL` (usado pelo `DatabaseModule`) e cobrir os dados migrados em `VCCFinanceMigrationTest`, que cria a base de dados na versão 1 com `MigrationTestHelper` e a abre com o Room atual — falha se faltar uma migration ou se o schema resultante divergir das entidades.
+
 ## 7. Repositórios e Use Cases
 
 Fluxo: **Compose → ViewModel → Use Case → Repository → Room**. Importadores e sincronizadores escrevem na mesma fonte de verdade (Room), que expõe `Flow` à UI.

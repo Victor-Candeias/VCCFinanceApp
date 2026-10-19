@@ -28,7 +28,9 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): VCCFinanceDatabase =
-        Room.databaseBuilder(context, VCCFinanceDatabase::class.java, VCCFinanceDatabase.NAME).build()
+        Room.databaseBuilder(context, VCCFinanceDatabase::class.java, VCCFinanceDatabase.NAME)
+            .addMigrations(*VCCFinanceMigrations.ALL)
+            .build()
 
     @Provides fun accountDao(db: VCCFinanceDatabase): AccountDao = db.accountDao()
     @Provides fun transactionDao(db: VCCFinanceDatabase): TransactionDao = db.transactionDao()
