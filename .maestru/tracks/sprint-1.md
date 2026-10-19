@@ -21,5 +21,5 @@ owner: developer
 | S1-03 | Confirmar a matriz de versões fixada (README §4) com gradlew assembleDebug | done | 2026-10-19 |  | high | 2026-10-19 |  |  |
 | S1-04 | Criar os sete módulos Gradle | done | 2026-10-19 |  | high | 2026-10-19 |  |  |
 | S1-05 | Configurar Compose, Material 3, Hilt e Navigation | done | 2026-10-19 |  | high | 2026-10-19 |  |  |
-| S1-06 | Compilar e executar no emulador | backlog | 2026-10-19 |  | high |  |  |  |
+| S1-06 | Compilar e executar no emulador | done | 2026-10-19 |  | high | 2026-10-19 |  |  |
 <!-- /maestru:work-items-list -->

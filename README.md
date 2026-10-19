@@ -154,6 +154,16 @@ Fixada a 19/10/2026 a partir do ambiente instalado no PC de desenvolvimento e da
 >
 > **Confirmação (S1-03, 19/10/2026):** `./gradlew :app:assembleDebug :app:testDebugUnitTest` passou com todas as bibliotecas do catálogo aplicadas em conjunto (KSP a gerar componentes Hilt, `@HiltViewModel` e `RoomDatabase_Impl`; rotas tipadas com Kotlin Serialization; DataStore; Biometric). A combinação Kotlin 2.4.20 + KSP 2.3.12 + Hilt 2.60.1 fica comprovada; não foi necessário ajustar versões. A fonte de verdade das versões é `gradle/libs.versions.toml`.
 
+### Compilar e executar
+
+```powershell
+./gradlew assembleDebug testDebugUnitTest :app:lintDebug   # compilar, testes unitários e lint
+./gradlew :app:installDebug                                # instalar no emulador/dispositivo ligado
+adb shell am start -n pt.vcc.financeapp/.MainActivity      # abrir a app
+```
+
+Validado no Sprint 1 (S1-06) no AVD `Pixel_10a` (Android 17, API 37): arranque sem erros, navegação entre os cinco separadores e temas claro/escuro.
+
 ### `settings.gradle.kts`
 
 ```kotlin
