@@ -28,3 +28,28 @@ replay_pid*
 
 # Maestru cache (derivada, reconstruída por maestru check)
 .maestru/.cache/
+
+# O jar do Gradle Wrapper tem de ficar versionado para o build ser reprodutível.
+!gradle/wrapper/gradle-wrapper.jar
+
+# Gradle
+.gradle/
+build/
+local.properties
+
+# Android
+*.apk
+*.aab
+*.ap_
+*.dex
+captures/
+.cxx/
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+
+# Material de assinatura
+keystore.properties
+*.jks
+*.keystore
