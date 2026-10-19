@@ -20,5 +20,5 @@ owner: developer
 | S2-02 | Criar TypeConverters e DAOs | done | 2026-10-19 |  | high | 2026-10-19 |  |  |  |
 | S2-03 | Configurar VCCFinanceDatabase e injeção Hilt | done | 2026-10-19 |  | high | 2026-10-19 |  |  |  |
 | S2-04 | Exportar schema e testar migrations | done | 2026-10-19 |  | high | 2026-10-19 |  |  |  |
-| S2-05 | Criar repositórios e mappers de domínio | backlog | 2026-10-19 |  | high |  |  |  |  |
+| S2-05 | Criar repositórios e mappers de domínio | done | 2026-10-19 |  | high | 2026-10-19 |  |  |  |
 <!-- /maestru:work-items-list -->

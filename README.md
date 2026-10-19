@@ -558,7 +558,7 @@ abstract class RepositoryModule {
 }
 ```
 
-Este contrato inicial usa entidades Room por simplicidade. Na evolução para sincronização, trocar para modelos de domínio e mappers sem expor Room à UI. Use Cases recomendados: `CreateAccount`, `CreateTransaction`, `TransferBetweenAccounts`, `GetAccountBalance`, `ImportStatement`, `GenerateReport`, `ReconcileTransactions`, `SyncAccount`.
+O esqueleto acima usa entidades Room por simplicidade. **Implementação (S2-05):** os contratos em `:core:data/repository` expõem modelos de domínio de `:core:model` (`Account`, `Transaction`, `Category`, …, com `Money` e `Instant`); os mappers `asDomain()`/`asEntity()` em `:core:data/mapper` cobrem as 12 entidades; `LocalAccountRepository`, `LocalTransactionRepository` e `LocalCategoryRepository` são `internal` e ligados por `di/RepositoryModule`, pelo que a UI nunca vê Room. Os repositórios das restantes tabelas (orçamentos, importações, ligações, regras, anexos, recorrências, saldos comunicados) são criados nos sprints que os usam. Use Cases recomendados: `CreateAccount`, `CreateTransaction`, `TransferBetweenAccounts`, `GetAccountBalance`, `ImportStatement`, `GenerateReport`, `ReconcileTransactions`, `SyncAccount`.
 
 Operações multi-registo devem ser atómicas com `RoomDatabase.withTransaction`, especialmente transferências, importações e reconciliações.
 
