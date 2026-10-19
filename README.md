@@ -160,6 +160,7 @@ Fixada a 19/10/2026 a partir do ambiente instalado no PC de desenvolvimento e da
 ./gradlew assembleDebug testDebugUnitTest :app:lintDebug   # compilar, testes unitários e lint
 ./gradlew :app:installDebug                                # instalar no emulador/dispositivo ligado
 adb shell am start -n pt.vcc.financeapp/.MainActivity      # abrir a app
+./gradlew :core:database:connectedDebugAndroidTest         # testes Room (requer emulador/dispositivo ligado)
 ```
 
 Validado no Sprint 1 (S1-06) no AVD `Pixel_10a` (Android 17, API 37): arranque sem erros, navegação entre os cinco separadores e temas claro/escuro.
