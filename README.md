@@ -299,6 +299,10 @@ enum class TransactionStatus { PENDING, BOOKED, CANCELLED }
 enum class ConnectionStatus { DISCONNECTED, PENDING_AUTHORIZATION, CONNECTED, EXPIRED, ERROR }
 ```
 
+Enums auxiliares das restantes tabelas (em `:core:model`, `FinanceEnums.kt`): `BudgetPeriod`, `RecurrenceFrequency`, `SyncStatus`, `ImportFormat`, `ImportStatus`, `RuleMatchField`, `RuleMatchType` e `BalanceSource`. Os nomes das constantes são persistidos em texto: renomear exige migration.
+
+**Implementação (S2-01):** as entidades vivem em `:core:database` (`entity/`). Para além dos esqueletos abaixo, a v1 inclui: chaves estrangeiras com índice em todas as colunas de referência (`RESTRICT` para movimentos de uma conta, `SET_NULL` para categorias/estabelecimentos/lotes opcionais, `CASCADE` para metadados dependentes); `transactions.importBatchId` para ligar cada movimento ao lote de importação; `merchants.normalizedName` único; `import_batches.fileSha256` para detetar reimportação do mesmo ficheiro; e `recurring_transactions.transferAccountId` para recorrências de transferência.
+
 ### `AccountEntity.kt`
 
 ```kotlin
