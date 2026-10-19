@@ -499,13 +499,15 @@ interface CategoryDao {
     @Query("SELECT * FROM categories WHERE isActive = 1 ORDER BY name")
     fun observeActive(): Flow<List<CategoryEntity>>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun upsert(category: CategoryEntity)
 
     @Query("SELECT * FROM categories WHERE id = :id")
     suspend fun getById(id: String): CategoryEntity?
 }
 ```
+
+**Upsert vs. REPLACE:** usar `@Upsert` (UPDATE in-place) e não `OnConflictStrategy.REPLACE`, que apaga e reinsere a linha e dispara `SET_NULL`/`CASCADE` nas tabelas filhas (ex.: perderia a categoria dos movimentos). Existe um DAO por entidade em `core/database/.../dao/` e os conversores de todos os enums em `converters/FinanceConverters.kt` (S2-02).
 
 ### `DatabaseModule.kt`
 

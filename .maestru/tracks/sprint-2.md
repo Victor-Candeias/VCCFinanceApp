@@ -17,7 +17,7 @@ owner: developer
 | ID | Title | Status | Created | Owner | Priority | Completed | Template | Blocked By | Spec |
 |---|---|---|---|---|---|---|---|---|---|
 | S2-01 | Criar as entidades das 12 tabelas da v1 (README §5) | done | 2026-10-19 |  | high | 2026-10-19 |  | sprint-1/S1-06 |  |
-| S2-02 | Criar TypeConverters e DAOs | backlog | 2026-10-19 |  | high |  |  |  |  |
+| S2-02 | Criar TypeConverters e DAOs | done | 2026-10-19 |  | high | 2026-10-19 |  |  |  |
 | S2-03 | Configurar VCCFinanceDatabase e injeção Hilt | backlog | 2026-10-19 |  | high |  |  |  |  |
 | S2-04 | Exportar schema e testar migrations | backlog | 2026-10-19 |  | high |  |  |  |  |
 | S2-05 | Criar repositórios e mappers de domínio | backlog | 2026-10-19 |  | high |  |  |  |  |
