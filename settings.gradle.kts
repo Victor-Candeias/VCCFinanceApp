@@ -16,4 +16,12 @@ dependencyResolutionManagement {
 
 rootProject.name = "VCCFinanceApp"
 
-include(":app")
+include(
+    ":app",
+    ":core:model",
+    ":core:database",
+    ":core:data",
+    ":core:security",
+    ":core:designsystem",
+    ":feature:finance",
+)

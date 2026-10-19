@@ -44,6 +44,13 @@ kotlin {
 }
 
 dependencies {
+    implementation(project(":core:model"))
+    implementation(project(":core:data"))
+    implementation(project(":core:database"))
+    implementation(project(":core:security"))
+    implementation(project(":core:designsystem"))
+    implementation(project(":feature:finance"))
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.activity.compose)
     implementation(platform(libs.compose.bom))
