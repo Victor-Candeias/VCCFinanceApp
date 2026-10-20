@@ -165,6 +165,17 @@ adb shell am start -n pt.vcc.financeapp/.MainActivity      # abrir a app
 
 Validado no Sprint 1 (S1-06) no AVD `Pixel_10a` (Android 17, API 37): arranque sem erros, navegação entre os cinco separadores e temas claro/escuro.
 
+### APK de release assinado
+
+`./gradlew :app:assembleRelease` gera `app/build/outputs/apk/release/VCCFinanceApp-<versionName>-<versionCode>-release.apk`. A versão está em `appVersionCode`/`appVersionName` no topo de `app/build.gradle.kts` (incrementar `versionCode` em cada release).
+
+As credenciais de assinatura nunca entram no git. O Gradle lê a primeira que existir de:
+
+1. `keystore.properties` na raiz do repositório (gitignored);
+2. `~/.keystores/vcc-finance-release.properties`.
+
+Chaves esperadas: `ANDROID_KEYSTORE_PATH`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. Sem ficheiro, o APK de release sai sem assinatura. Fazer backup da keystore e do `.properties` — sem eles não é possível atualizar a app instalada. Verificar com `apksigner verify --print-certs <apk>`.
+
 ### `settings.gradle.kts`
 
 ```kotlin
