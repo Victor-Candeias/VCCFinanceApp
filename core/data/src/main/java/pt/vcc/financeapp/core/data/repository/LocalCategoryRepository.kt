@@ -23,4 +23,7 @@ internal class LocalCategoryRepository @Inject constructor(
     override suspend fun save(category: Category) = dao.upsert(category.asEntity())
 
     override suspend fun deactivate(id: String) = dao.deactivate(id)
+
+    override suspend fun insertIfAbsent(categories: List<Category>): Int =
+        dao.insertAllIfAbsent(categories.map(Category::asEntity)).count { it != -1L }
 }

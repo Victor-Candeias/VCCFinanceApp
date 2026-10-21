@@ -33,6 +33,11 @@ class FakeCategoryRepository(initial: List<Category> = emptyList()) : CategoryRe
     override suspend fun getById(id: String): Category? = categories.value.find { it.id == id }
     override suspend fun save(category: Category) = categories.update { list -> list.filterNot { it.id == category.id } + category }
     override suspend fun deactivate(id: String) = categories.update { list -> list.map { if (it.id == id) it.copy(isActive = false) else it } }
+    override suspend fun insertIfAbsent(categories: List<Category>): Int {
+        val missing = categories.filter { candidate -> this.categories.value.none { it.id == candidate.id } }
+        this.categories.update { it + missing }
+        return missing.size
+    }
 }
 
 class FakeTransactionRepository(initial: List<Transaction> = emptyList()) : TransactionRepository {

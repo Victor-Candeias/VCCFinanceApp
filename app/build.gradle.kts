@@ -88,6 +88,7 @@ dependencies {
     implementation(libs.activity.compose)
     implementation(libs.navigation.compose)
     implementation(libs.lifecycle.runtime.compose)
+    implementation(libs.kotlinx.coroutines.core)
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)

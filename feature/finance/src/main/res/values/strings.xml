@@ -74,4 +74,33 @@
     <string name="account_deactivate_message">A conta deixa de aparecer no início e nos formulários. Os movimentos são mantidos e podes reativá-la a qualquer momento.</string>
     <string name="account_reactivate_title">Reativar conta?</string>
     <string name="account_reactivate_message">A conta volta a ficar disponível para novos movimentos.</string>
+
+    <string name="action_delete">Apagar</string>
+    <string name="action_ok">OK</string>
+    <string name="transaction_add">Novo movimento</string>
+    <string name="transaction_editor_new_title">Novo movimento</string>
+    <string name="transaction_editor_edit_title">Editar movimento</string>
+    <string name="transaction_editor_not_found">O movimento já não existe.</string>
+    <string name="transaction_editor_no_accounts">Cria uma conta antes de registar movimentos.</string>
+    <string name="transaction_editor_transfer_readonly">Este movimento faz parte de uma transferência entre contas e não pode ser editado isoladamente.</string>
+    <string name="transaction_type_expense">Despesa</string>
+    <string name="transaction_type_income">Receita</string>
+    <string name="transaction_field_account">Conta</string>
+    <string name="transaction_choose_account">Escolhe uma conta</string>
+    <string name="transaction_field_amount">Valor</string>
+    <string name="transaction_field_description">Descrição</string>
+    <string name="transaction_field_date">Data</string>
+    <string name="transaction_field_category">Categoria</string>
+    <string name="transaction_no_category">Sem categoria</string>
+    <string name="transaction_field_pending">Pendente</string>
+    <string name="transaction_pending_hint">Movimentos pendentes não contam para os totais.</string>
+    <string name="transaction_field_notes">Notas (opcional)</string>
+    <string name="transaction_error_no_account">Escolhe a conta do movimento.</string>
+    <string name="transaction_error_account_inactive">A conta está desativada.</string>
+    <string name="transaction_error_amount">Indica um valor positivo, por exemplo 12,50.</string>
+    <string name="transaction_error_blank_description">Indica uma descrição.</string>
+    <string name="transaction_error_description_too_long">A descrição não pode ter mais de %1$d caracteres.</string>
+    <string name="transaction_error_category">A categoria não corresponde ao tipo de movimento.</string>
+    <string name="transaction_delete_title">Apagar movimento?</string>
+    <string name="transaction_delete_message">O movimento é removido definitivamente e o saldo da conta é recalculado.</string>
 </resources>

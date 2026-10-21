@@ -9,4 +9,7 @@ interface CategoryRepository {
     suspend fun getById(id: String): Category?
     suspend fun save(category: Category)
     suspend fun deactivate(id: String)
+
+    /** Insere as categorias cujo `id` ainda não existe; devolve quantas foram inseridas. */
+    suspend fun insertIfAbsent(categories: List<Category>): Int
 }

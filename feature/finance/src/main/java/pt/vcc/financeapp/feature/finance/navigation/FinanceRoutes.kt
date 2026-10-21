@@ -15,6 +15,10 @@ data class AccountEditorRoute(val accountId: String? = null)
 @Serializable
 data object TransactionsRoute
 
+/** Editor de receita/despesa; [transactionId] nulo cria um movimento novo. */
+@Serializable
+data class TransactionEditorRoute(val transactionId: String? = null)
+
 @Serializable
 data object ReportsRoute
 

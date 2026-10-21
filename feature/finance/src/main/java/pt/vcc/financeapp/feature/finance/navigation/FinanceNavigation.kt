@@ -11,6 +11,7 @@ import pt.vcc.financeapp.feature.finance.dashboard.DashboardScreen
 import pt.vcc.financeapp.feature.finance.reports.ReportsScreen
 import pt.vcc.financeapp.feature.finance.settings.SettingsEntry
 import pt.vcc.financeapp.feature.finance.settings.SettingsScreen
+import pt.vcc.financeapp.feature.finance.transactions.TransactionEditorScreen
 import pt.vcc.financeapp.feature.finance.transactions.TransactionsScreen
 
 /**
@@ -34,7 +35,15 @@ fun NavGraphBuilder.financeGraph(
     composable<AccountEditorRoute> {
         AccountEditorScreen(onBack = { navController.popBackStack() })
     }
-    composable<TransactionsRoute> { TransactionsScreen() }
+    composable<TransactionsRoute> {
+        TransactionsScreen(
+            onAddTransaction = { navController.navigate(TransactionEditorRoute()) },
+            onTransactionClick = { navController.navigate(TransactionEditorRoute(it)) },
+        )
+    }
+    composable<TransactionEditorRoute> {
+        TransactionEditorScreen(onBack = { navController.popBackStack() })
+    }
     composable<ReportsRoute> { ReportsScreen() }
     composable<SettingsRoute> {
         SettingsScreen(

@@ -1,7 +1,6 @@
 package pt.vcc.financeapp.feature.finance.accounts
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,11 +11,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -30,7 +26,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -42,6 +37,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import pt.vcc.financeapp.core.model.AccountType
 import pt.vcc.financeapp.feature.finance.R
+import pt.vcc.financeapp.feature.finance.ui.DropdownField
 import pt.vcc.financeapp.feature.finance.ui.LoadingState
 import pt.vcc.financeapp.feature.finance.ui.labelRes
 
@@ -138,7 +134,12 @@ private fun AccountForm(
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
             modifier = Modifier.fillMaxWidth(),
         )
-        AccountTypePicker(selected = state.type, onSelect = viewModel::onTypeChange)
+        DropdownField(
+            label = stringResource(R.string.account_field_type),
+            selectedText = stringResource(state.type.labelRes),
+            options = AccountType.entries.map { it to stringResource(it.labelRes) },
+            onSelect = viewModel::onTypeChange,
+        )
         OutlinedTextField(
             value = state.institutionName,
             onValueChange = viewModel::onInstitutionChange,
@@ -183,28 +184,6 @@ private fun AccountForm(
         if (!state.isNew) {
             OutlinedButton(onClick = onToggleActive, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(if (state.isActive) R.string.account_deactivate else R.string.account_reactivate))
-            }
-        }
-    }
-}
-
-@Composable
-private fun AccountTypePicker(selected: AccountType, onSelect: (AccountType) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    Column {
-        Text(stringResource(R.string.account_field_type))
-        Box {
-            OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(selected.labelRes), Modifier.weight(1f))
-                Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
-            }
-            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                AccountType.entries.forEach { type ->
-                    DropdownMenuItem(
-                        text = { Text(stringResource(type.labelRes)) },
-                        onClick = { expanded = false; onSelect(type) },
-                    )
-                }
             }
         }
     }
