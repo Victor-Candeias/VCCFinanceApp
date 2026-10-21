@@ -28,3 +28,9 @@ data object ReportsRoute
 
 @Serializable
 data object SettingsRoute
+
+@Serializable
+data object SecuritySettingsRoute
+
+@Serializable
+data object ChangePinRoute

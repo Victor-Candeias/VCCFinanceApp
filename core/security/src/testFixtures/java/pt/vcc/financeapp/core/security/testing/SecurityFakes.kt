@@ -1,5 +1,10 @@
 package pt.vcc.financeapp.core.security.testing
 
+import java.time.Clock
+import java.time.Duration
+import java.time.Instant
+import java.time.ZoneId
+import java.time.ZoneOffset
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
@@ -36,4 +41,17 @@ class FakePinPepper : PinPepper {
     override fun deleteKey() {
         key = null
     }
+}
+
+/** Relógio controlado pelos testes. */
+class MutableClock(var instant: Instant = Instant.parse("2026-10-21T10:00:00Z")) : Clock() {
+    fun advance(duration: Duration) {
+        instant = instant.plus(duration)
+    }
+
+    override fun getZone(): ZoneId = ZoneOffset.UTC
+
+    override fun withZone(zone: ZoneId?): Clock = this
+
+    override fun instant(): Instant = instant
 }

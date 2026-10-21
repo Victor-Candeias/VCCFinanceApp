@@ -6,6 +6,8 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import pt.vcc.financeapp.feature.finance.R
 import pt.vcc.financeapp.feature.finance.accounts.AccountEditorScreen
+import pt.vcc.financeapp.feature.finance.authentication.ChangePinScreen
+import pt.vcc.financeapp.feature.finance.authentication.SecuritySettingsScreen
 import pt.vcc.financeapp.feature.finance.accounts.AccountsScreen
 import pt.vcc.financeapp.feature.finance.dashboard.DashboardScreen
 import pt.vcc.financeapp.feature.finance.reports.ReportsScreen
@@ -57,11 +59,24 @@ fun NavGraphBuilder.financeGraph(
         TransferEditorScreen(onBack = { navController.popBackStack() })
     }
     composable<ReportsRoute> { ReportsScreen() }
+    composable<SecuritySettingsRoute> {
+        SecuritySettingsScreen(
+            onBack = { navController.popBackStack() },
+            onChangePin = { navController.navigate(ChangePinRoute) },
+        )
+    }
+    composable<ChangePinRoute> {
+        ChangePinScreen(onBack = { navController.popBackStack() })
+    }
     composable<SettingsRoute> {
         SettingsScreen(
             appVersion = appVersion,
             entries = listOf(
-                SettingsEntry(stringResource(R.string.settings_security), stringResource(R.string.settings_security_description)),
+                SettingsEntry(
+                    stringResource(R.string.settings_security),
+                    stringResource(R.string.settings_security_description),
+                    onClick = { navController.navigate(SecuritySettingsRoute) },
+                ),
                 SettingsEntry(stringResource(R.string.settings_import), stringResource(R.string.settings_import_description)),
                 SettingsEntry(stringResource(R.string.settings_export), stringResource(R.string.settings_export_description)),
                 SettingsEntry(stringResource(R.string.settings_backup), stringResource(R.string.settings_backup_description)),

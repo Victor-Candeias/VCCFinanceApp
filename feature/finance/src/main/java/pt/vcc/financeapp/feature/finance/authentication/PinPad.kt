@@ -50,11 +50,15 @@ internal fun PinEntryLayout(
     onDelete: () -> Unit,
     onConfirm: () -> Unit,
     modifier: Modifier = Modifier,
+    applySystemInsets: Boolean = true,
     footer: @Composable () -> Unit = {},
 ) {
     Surface(modifier = modifier.fillMaxSize()) {
         Column(
-            modifier = Modifier.fillMaxSize().safeDrawingPadding().padding(24.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .then(if (applySystemInsets) Modifier.safeDrawingPadding() else Modifier)
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {

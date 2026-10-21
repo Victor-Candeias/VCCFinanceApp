@@ -717,6 +717,8 @@ biometricPrompt.authenticate(promptInfo)
 
 **Implementação (S4-01):** módulo `:core:security`. `PinPolicy` aceita 4 a 8 algarismos e rejeita PINs triviais (todos iguais ou sequências como 1234/9876). O verificador guardado é `HMAC(PBKDF2-HMAC-SHA256(pin, salt 16 B, 210 000 iterações))`, onde o HMAC usa uma chave não exportável do Android Keystore (`KeystorePinPepper`), para que uma cópia do verificador não permita ataques de força bruta fora do dispositivo. Salt, verificador (Base64) e iterações ficam num DataStore próprio (`security`); o PIN só existe em `CharArray` limpos depois de usados. `SessionManager` expõe `SessionState` (`INITIALIZING`/`SETUP_REQUIRED`/`LOCKED`/`UNLOCKED`) e `AuthenticationGate` só compõe a navegação da app em `UNLOCKED`; antes mostra o onboarding (boas-vindas → criar PIN → confirmar) ou o ecrã de desbloqueio. `isPinConfigured` é um `Flow<Boolean>`.
 
+**Implementação (S4-02):** `verifyPin` devolve `PinVerification` (`Success` / `Wrong(remainingAttempts)` / `LockedOut(until)`) e `changePin` devolve o mesmo resultado. As tentativas falhadas são persistidas antes da derivação (fechar a app a meio não dá tentativas grátis) e só voltam a zero com o PIN certo: 5 tentativas livres; depois, cada falha bloqueia por 30 s, duplicando a cada falha até 1 h. Durante o bloqueio nenhum PIN é verificado e o ecrã de desbloqueio mostra uma contagem decrescente, mantida depois de reiniciar a app. `Mais → Segurança → Alterar PIN` pede o PIN atual (sujeito ao mesmo limite; ao atingir o bloqueio a sessão é bloqueada), o PIN novo e a confirmação. O bloqueio usa o relógio do sistema; adiantar o relógio encurta-o (limitação aceite numa app local).
+
 Fluxo: iniciar → verificar configuração de PIN → configurar ou desbloquear → biometria ou PIN → `Unlocked` → dashboard.
 
 ## 11. Importação de movimentos
@@ -894,3 +896,4 @@ A primeira milestone deve produzir um **projeto Android Studio compilável** com
 | 19/10/2026 | Matriz de versões confirmada com `assembleDebug` (S1-03), sem ajustes. |
 | 21/10/2026 | Transferências internas guardadas como duas pernas `EXPENSE`/`INCOME` ligadas por `transferGroupId` (sem usar `TransactionType.TRANSFER` nem migração); só entre contas da mesma moeda. |
 | 21/10/2026 | Verificador do PIN = HMAC (chave do Keystore) sobre PBKDF2-HMAC-SHA256 com 210 000 iterações; `SessionState` implementado como enum com `INITIALIZING` (estado antes de ler o DataStore) e `isPinConfigured` como `Flow`. |
+| 21/10/2026 | `verifyPin`/`changePin` devolvem `PinVerification` (sealed) em vez de `Boolean`, para a UI distinguir PIN errado (com tentativas restantes) de bloqueio temporário; bloqueio progressivo 5 tentativas → 30 s a duplicar até 1 h. |

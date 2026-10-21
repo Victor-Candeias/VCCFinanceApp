@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
@@ -19,6 +20,10 @@ data class SecurityPreferences(
     val pinVerifier: String? = null,
     val pinSalt: String? = null,
     val pinIterations: Int = 0,
+    /** Tentativas falhadas desde o último PIN correto. */
+    val failedAttempts: Int = 0,
+    /** Fim do bloqueio atual (epoch millis); 0 sem bloqueio. */
+    val lockedUntilMillis: Long = 0,
 ) {
     val isPinConfigured: Boolean get() = pinVerifier != null && pinSalt != null && pinIterations > 0
 }
@@ -44,6 +49,8 @@ internal class DataStoreSecurityStore @Inject constructor(
             prefs.setOrRemove(PIN_VERIFIER, updated.pinVerifier)
             prefs.setOrRemove(PIN_SALT, updated.pinSalt)
             prefs[PIN_ITERATIONS] = updated.pinIterations
+            prefs[FAILED_ATTEMPTS] = updated.failedAttempts
+            prefs[LOCKED_UNTIL] = updated.lockedUntilMillis
         }
     }
 
@@ -51,6 +58,8 @@ internal class DataStoreSecurityStore @Inject constructor(
         pinVerifier = this[PIN_VERIFIER],
         pinSalt = this[PIN_SALT],
         pinIterations = this[PIN_ITERATIONS] ?: 0,
+        failedAttempts = this[FAILED_ATTEMPTS] ?: 0,
+        lockedUntilMillis = this[LOCKED_UNTIL] ?: 0,
     )
 
     private fun <T> MutablePreferences.setOrRemove(key: Preferences.Key<T>, value: T?) {
@@ -61,5 +70,7 @@ internal class DataStoreSecurityStore @Inject constructor(
         val PIN_VERIFIER = stringPreferencesKey("pin_verifier")
         val PIN_SALT = stringPreferencesKey("pin_salt")
         val PIN_ITERATIONS = intPreferencesKey("pin_iterations")
+        val FAILED_ATTEMPTS = intPreferencesKey("pin_failed_attempts")
+        val LOCKED_UNTIL = longPreferencesKey("pin_locked_until")
     }
 }

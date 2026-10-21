@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -110,8 +111,8 @@ internal fun UnlockScreen(viewModel: UnlockViewModel = hiltViewModel()) {
         title = stringResource(R.string.unlock_title),
         subtitle = stringResource(R.string.unlock_subtitle),
         enteredDigits = state.enteredDigits,
-        message = if (state.wrongPin) stringResource(R.string.unlock_wrong_pin) else null,
-        enabled = !state.isVerifying,
+        message = unlockMessage(state.lockoutSeconds, state.remainingAttempts),
+        enabled = state.canEnterPin,
         onDigit = viewModel::onDigit,
         onDelete = viewModel::onDelete,
         onConfirm = viewModel::onConfirm,
@@ -124,7 +125,15 @@ internal fun UnlockScreen(viewModel: UnlockViewModel = hiltViewModel()) {
     )
 }
 
-private fun SetupPinError.messageRes(): Int = when (this) {
+@Composable
+internal fun unlockMessage(lockoutSeconds: Long, remainingAttempts: Int?): String? = when {
+    lockoutSeconds > 0 -> pluralStringResource(R.plurals.pin_locked_out, lockoutSeconds.toInt(), lockoutSeconds.toInt())
+    remainingAttempts == null -> null
+    remainingAttempts == 0 -> stringResource(R.string.pin_wrong_last_attempt)
+    else -> pluralStringResource(R.plurals.pin_wrong_remaining, remainingAttempts, remainingAttempts)
+}
+
+internal fun SetupPinError.messageRes(): Int = when (this) {
     SetupPinError.TOO_SHORT -> R.string.pin_error_length
     SetupPinError.TOO_SIMPLE -> R.string.pin_error_too_simple
     SetupPinError.MISMATCH -> R.string.pin_error_mismatch

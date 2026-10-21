@@ -144,5 +144,21 @@
     <string name="pin_confirm">Confirmar PIN</string>
     <string name="unlock_title">App bloqueada</string>
     <string name="unlock_subtitle">Introduz o teu PIN para continuar.</string>
-    <string name="unlock_wrong_pin">PIN incorreto.</string>
-</resources>
+    <plurals name="pin_wrong_remaining">
+        <item quantity="one">PIN incorreto. Resta %1$d tentativa antes do bloqueio.</item>
+        <item quantity="other">PIN incorreto. Restam %1$d tentativas antes do bloqueio.</item>
+    </plurals>
+    <string name="pin_wrong_last_attempt">PIN incorreto. Um novo erro bloqueia temporariamente a app.</string>
+    <plurals name="pin_locked_out">
+        <item quantity="one">Demasiadas tentativas. Tenta novamente dentro de %1$d segundo.</item>
+        <item quantity="other">Demasiadas tentativas. Tenta novamente dentro de %1$d segundos.</item>
+    </plurals>
+
+    <string name="security_title">Segurança</string>
+    <string name="security_change_pin">Alterar PIN</string>
+    <string name="security_change_pin_description">Pede o PIN atual antes de definir um novo.</string>
+    <string name="change_pin_current_title">PIN atual</string>
+    <string name="change_pin_current_subtitle">Introduz o PIN que usas agora.</string>
+    <string name="change_pin_new_title">Novo PIN</string>
+    <string name="change_pin_confirm_title">Confirma o novo PIN</string>
+    <string name="change_pin_done">PIN alterado.</string></resources>
