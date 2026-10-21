@@ -19,6 +19,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import pt.vcc.financeapp.BuildConfig
 import pt.vcc.financeapp.feature.finance.navigation.DashboardRoute
 import pt.vcc.financeapp.feature.finance.navigation.financeGraph
 
@@ -49,6 +50,7 @@ fun AppNavHost(navController: NavHostController = rememberNavController()) {
             modifier = Modifier.padding(innerPadding),
         ) {
             financeGraph(
+                appVersion = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
                 onNavigateToAccounts = {
                     navController.navigateToTopLevel(TopLevelDestination.ACCOUNTS)
                 },

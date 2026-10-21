@@ -672,6 +672,8 @@ fun AccountsScreen(viewModel: AccountsViewModel = hiltViewModel()) {
 
 Importar `collectAsStateWithLifecycle` de Lifecycle Compose; assegurar as dependências correspondentes no módulo.
 
+**Implementação (S3-01):** cada separador tem um `@HiltViewModel` que combina os `Flow` dos repositórios (`DashboardViewModel`, `AccountsViewModel`, `TransactionsViewModel`). Início mostra o resumo do mês corrente (receitas, despesas e saldo do período por moeda, via `PeriodTotals.byCurrency` em `:core:model`) e os últimos movimentos; Movimentos lista o mês selecionado (navegação mês a mês, limites calculados no fuso do `Clock` injetado); Mais lista as áreas de definições (as ainda não implementadas aparecem desativadas) e a versão. Valores formatados em pt-PT sem `Float`/`Double` (`feature/finance/ui/Formatting.kt`).
+
 ## 10. Autenticação, PIN e biometria
 
 Componentes: `PinManager`, `BiometricAuthenticator`, `SessionManager` e `SecurityPreferences`.

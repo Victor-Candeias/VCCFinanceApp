@@ -1,14 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="finance_dashboard_title">Início</string>
-    <string name="finance_dashboard_message">Resumo de saldos, receitas e despesas.</string>
+    <string name="finance_dashboard_no_accounts">Cria a primeira conta para começar a registar movimentos.</string>
     <string name="finance_dashboard_view_accounts">Ver contas</string>
     <string name="finance_accounts_title">Contas</string>
     <string name="finance_accounts_empty">Ainda não existem contas.</string>
     <string name="finance_transactions_title">Movimentos</string>
-    <string name="finance_transactions_empty">Ainda não existem movimentos.</string>
+    <string name="finance_transactions_empty">Sem movimentos neste período.</string>
     <string name="finance_reports_title">Relatórios</string>
     <string name="finance_reports_empty">Os relatórios ficam disponíveis quando houver movimentos.</string>
     <string name="finance_settings_title">Mais</string>
-    <string name="finance_settings_empty">Definições, segurança, importação e exportação.</string>
+    <string name="error_loading">Não foi possível carregar os dados.</string>
+
+    <string name="dashboard_month_summary">Resumo de %1$s</string>
+    <string name="dashboard_recent_transactions">Movimentos recentes</string>
+    <plurals name="dashboard_active_accounts">
+        <item quantity="one">%d conta ativa</item>
+        <item quantity="other">%d contas ativas</item>
+    </plurals>
+
+    <string name="month_previous">Mês anterior</string>
+    <string name="month_next">Mês seguinte</string>
+    <string name="totals_empty">Sem receitas nem despesas confirmadas.</string>
+    <string name="totals_income">Receitas</string>
+    <string name="totals_expenses">Despesas</string>
+    <string name="totals_net">Saldo do período</string>
+
+    <string name="transaction_transfer_label">Transferência</string>
+    <string name="transaction_status_pending">Pendente</string>
+    <string name="transaction_status_cancelled">Cancelado</string>
+
+    <string name="account_type_bank_account">Conta bancária</string>
+    <string name="account_type_meal_card">Cartão de refeição</string>
+    <string name="account_type_credit_card">Cartão de crédito</string>
+    <string name="account_type_cash">Dinheiro</string>
+    <string name="account_type_savings">Poupança</string>
+    <string name="account_type_other">Outra</string>
+
+    <string name="settings_security">Segurança</string>
+    <string name="settings_security_description">PIN, biometria e bloqueio automático</string>
+    <string name="settings_import">Importar extratos</string>
+    <string name="settings_import_description">CSV e XLSX dos bancos</string>
+    <string name="settings_export">Exportar dados</string>
+    <string name="settings_export_description">CSV, XLSX, PDF e JSON</string>
+    <string name="settings_backup">Backup e restauro</string>
+    <string name="settings_backup_description">Cópia de segurança encriptada</string>
+    <string name="settings_about">Sobre</string>
+    <string name="settings_version">VCCFinanceApp %1$s</string>
 </resources>

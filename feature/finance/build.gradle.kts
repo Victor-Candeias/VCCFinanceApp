@@ -48,4 +48,5 @@ dependencies {
     debugImplementation(libs.compose.tooling)
 
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
 }
