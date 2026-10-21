@@ -2,6 +2,7 @@ package pt.vcc.financeapp.feature.finance.accounts
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -22,10 +23,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import pt.vcc.financeapp.core.data.usecase.AccountWithBalance
 import pt.vcc.financeapp.core.designsystem.components.EmptyState
-import pt.vcc.financeapp.core.model.Account
 import pt.vcc.financeapp.feature.finance.R
+import pt.vcc.financeapp.feature.finance.ui.BalanceTotalsCard
 import pt.vcc.financeapp.feature.finance.ui.LoadingState
+import pt.vcc.financeapp.feature.finance.ui.formatted
 import pt.vcc.financeapp.feature.finance.ui.labelRes
 
 @Composable
@@ -49,7 +52,12 @@ fun AccountsScreen(
                 message = stringResource(R.string.finance_accounts_empty),
             )
             else -> LazyColumn(contentPadding = PaddingValues(bottom = 88.dp)) {
-                items(state.accounts, key = Account::id) { account -> AccountRow(account, onAccountClick) }
+                if (state.totals.isNotEmpty()) {
+                    item(key = "totals") {
+                        BalanceTotalsCard(state.totals, Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                    }
+                }
+                items(state.accounts, key = { it.account.id }) { item -> AccountRow(item, onAccountClick) }
                 if (state.inactiveAccounts.isNotEmpty()) {
                     item(key = "inactive-header") {
                         Text(
@@ -59,7 +67,7 @@ fun AccountsScreen(
                             modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp),
                         )
                     }
-                    items(state.inactiveAccounts, key = Account::id) { account -> AccountRow(account, onAccountClick) }
+                    items(state.inactiveAccounts, key = { it.account.id }) { item -> AccountRow(item, onAccountClick) }
                 }
             }
         }
@@ -73,7 +81,9 @@ fun AccountsScreen(
 }
 
 @Composable
-private fun AccountRow(account: Account, onClick: (String) -> Unit) {
+private fun AccountRow(item: AccountWithBalance, onClick: (String) -> Unit) {
+    val account = item.account
+    val balance = item.balance
     val type = stringResource(account.type.labelRes)
     val color = if (account.isActive) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline
     ListItem(
@@ -82,6 +92,21 @@ private fun AccountRow(account: Account, onClick: (String) -> Unit) {
         supportingContent = {
             Text(listOfNotNull(type, account.institutionName).joinToString(" · "))
         },
-        trailingContent = { Text(account.currency) },
+        trailingContent = {
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = balance.booked.formatted(),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = if (balance.booked.isNegative) MaterialTheme.colorScheme.error else color,
+                )
+                if (balance.pending.amountMinor != 0L) {
+                    Text(
+                        text = stringResource(R.string.balance_pending, balance.pending.formatted()),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        },
     )
 }

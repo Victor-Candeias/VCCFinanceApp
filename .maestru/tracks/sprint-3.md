@@ -20,5 +20,5 @@ owner: developer
 | S3-02 | Criar, editar e desativar contas | done | 2026-10-19 |  | high | 2026-10-21 |  |  |  |
 | S3-03 | Criar receitas e despesas | done | 2026-10-19 |  | high | 2026-10-21 |  |  |  |
 | S3-04 | Implementar transferências internas atómicas | done | 2026-10-19 |  | high | 2026-10-21 |  |  |  |
-| S3-05 | Validar cálculo de saldos | backlog | 2026-10-19 |  | high |  |  |  |  |
+| S3-05 | Validar cálculo de saldos | done | 2026-10-19 |  | high | 2026-10-21 |  |  |  |
 <!-- /maestru:work-items-list -->

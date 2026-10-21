@@ -10,7 +10,9 @@ import pt.vcc.financeapp.core.data.repository.CategoryRepository
 import pt.vcc.financeapp.core.data.repository.TransactionRepository
 import pt.vcc.financeapp.core.model.Account
 import pt.vcc.financeapp.core.model.Category
+import pt.vcc.financeapp.core.model.BalanceMovement
 import pt.vcc.financeapp.core.model.Transaction
+import pt.vcc.financeapp.core.model.asBalanceMovement
 
 class FakeAccountRepository(initial: List<Account> = emptyList()) : AccountRepository {
     val accounts = MutableStateFlow(initial)
@@ -51,6 +53,9 @@ class FakeTransactionRepository(initial: List<Transaction> = emptyList()) : Tran
         requestedPeriods += fromInclusive to toExclusive
         return transactions.map { list -> list.filter { it.bookingDate >= fromInclusive && it.bookingDate < toExclusive } }
     }
+
+    override fun observeBalanceMovements(): Flow<List<BalanceMovement>> =
+        transactions.map { list -> list.map(Transaction::asBalanceMovement) }
 
     override suspend fun getById(id: String): Transaction? = transactions.value.find { it.id == id }
     override suspend fun countByAccount(accountId: String): Int = transactions.value.count { it.accountId == accountId }

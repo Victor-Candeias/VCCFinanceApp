@@ -2,6 +2,7 @@ package pt.vcc.financeapp.core.data.repository
 
 import java.time.Instant
 import kotlinx.coroutines.flow.Flow
+import pt.vcc.financeapp.core.model.BalanceMovement
 import pt.vcc.financeapp.core.model.Transaction
 
 interface TransactionRepository {
@@ -9,6 +10,9 @@ interface TransactionRepository {
 
     /** Movimentos com `bookingDate` em `[fromInclusive, toExclusive)`. */
     fun observeInPeriod(fromInclusive: Instant, toExclusive: Instant): Flow<List<Transaction>>
+
+    /** Totais agregados por conta/tipo/estado/moeda para o cálculo de saldos. */
+    fun observeBalanceMovements(): Flow<List<BalanceMovement>>
 
     suspend fun getById(id: String): Transaction?
     suspend fun countByAccount(accountId: String): Int

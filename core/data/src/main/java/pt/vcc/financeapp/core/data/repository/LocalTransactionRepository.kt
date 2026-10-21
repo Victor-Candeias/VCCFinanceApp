@@ -8,6 +8,8 @@ import pt.vcc.financeapp.core.data.mapper.asDomain
 import pt.vcc.financeapp.core.data.mapper.asEntity
 import pt.vcc.financeapp.core.database.dao.TransactionDao
 import pt.vcc.financeapp.core.database.entity.TransactionEntity
+import pt.vcc.financeapp.core.model.BalanceMovement
+import pt.vcc.financeapp.core.model.Money
 import pt.vcc.financeapp.core.model.Transaction
 
 internal class LocalTransactionRepository @Inject constructor(
@@ -19,6 +21,11 @@ internal class LocalTransactionRepository @Inject constructor(
     override fun observeInPeriod(fromInclusive: Instant, toExclusive: Instant): Flow<List<Transaction>> =
         dao.observeInPeriod(fromInclusive.toEpochMilli(), toExclusive.toEpochMilli())
             .map { it.map(TransactionEntity::asDomain) }
+
+    override fun observeBalanceMovements(): Flow<List<BalanceMovement>> =
+        dao.observeBalanceMovements().map { rows ->
+            rows.map { BalanceMovement(it.accountId, it.type, it.status, Money(it.amountMinor, it.currency)) }
+        }
 
     override suspend fun getById(id: String): Transaction? = dao.getById(id)?.asDomain()
 

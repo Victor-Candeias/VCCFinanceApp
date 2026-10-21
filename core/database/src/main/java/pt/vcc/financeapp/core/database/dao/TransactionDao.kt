@@ -8,6 +8,8 @@ import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 import pt.vcc.financeapp.core.database.entity.TransactionEntity
+import pt.vcc.financeapp.core.model.TransactionStatus
+import pt.vcc.financeapp.core.model.TransactionType
 
 @Dao
 interface TransactionDao {
@@ -72,4 +74,25 @@ interface TransactionDao {
         """,
     )
     fun observeNetMovement(accountId: String): Flow<Long>
+    /**
+     * Totais por conta, tipo, estado e moeda: a base do saldo de todas as contas numa só consulta.
+     * O saldo final é calculado por `AccountBalanceCalculator` (README §6).
+     */
+    @Query(
+        """
+        SELECT accountId, type, status, currency, COALESCE(SUM(amountMinor), 0) AS amountMinor
+        FROM transactions
+        GROUP BY accountId, type, status, currency
+        """,
+    )
+    fun observeBalanceMovements(): Flow<List<BalanceMovementRow>>
 }
+
+/** Linha agregada de [TransactionDao.observeBalanceMovements]. */
+data class BalanceMovementRow(
+    val accountId: String,
+    val type: TransactionType,
+    val status: TransactionStatus,
+    val currency: String,
+    val amountMinor: Long,
+)

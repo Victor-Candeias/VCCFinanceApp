@@ -503,6 +503,8 @@ interface TransactionDao {
 
 A consulta `observeNetMovement` **não** é o saldo final: exclui transferências e requer evolução para tratar movimentos associados, saldo inicial, ajustes e diferentes moedas. Implementar `AccountBalanceCalculator` com testes de consistência.
 
+**Implementação (S3-05):** o saldo vem de `AccountBalanceCalculator` (`:core:model`): saldo inicial + receitas − despesas `BOOKED` da conta, incluindo as pernas de transferências internas; os pendentes ficam num valor separado (`pending`/`projected`), os cancelados e o tipo legado `TRANSFER` não contam, e movimentos noutra moeda são ignorados e contados (`ignoredForeignMovements`), nunca convertidos. `TransactionDao.observeBalanceMovements` agrega por conta/tipo/estado/moeda numa só consulta e `ObserveAccountBalancesUseCase` junta-a às contas. Contas mostra o saldo de cada conta (e os pendentes) e o saldo total por moeda das contas ativas; Início mostra o mesmo total. Testes de consistência: resultado agregado = resultado movimento a movimento, transferências não alteram o total, moedas nunca se misturam, e a agregação SQL é verificada em `VCCFinanceDatabaseTest`.
+
 ### `CategoryDao.kt`
 
 ```kotlin

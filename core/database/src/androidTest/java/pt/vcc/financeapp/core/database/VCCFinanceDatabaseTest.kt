@@ -4,6 +4,7 @@ import android.database.sqlite.SQLiteConstraintException
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -12,11 +13,13 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import pt.vcc.financeapp.core.database.dao.BalanceMovementRow
 import pt.vcc.financeapp.core.database.entity.AccountEntity
 import pt.vcc.financeapp.core.database.entity.CategoryEntity
 import pt.vcc.financeapp.core.database.entity.TransactionEntity
 import pt.vcc.financeapp.core.model.AccountType
 import pt.vcc.financeapp.core.model.TransactionSource
+import pt.vcc.financeapp.core.model.TransactionStatus
 import pt.vcc.financeapp.core.model.TransactionType
 
 @RunWith(AndroidJUnit4::class)
@@ -66,6 +69,31 @@ class VCCFinanceDatabaseTest {
 
         assertTrue(error is SQLiteConstraintException)
         assertEquals(emptyList<TransactionEntity>(), db.transactionDao().getByTransferGroup("grp-1"))
+    }
+
+    @Test
+    fun balanceMovementsAreAggregatedByAccountTypeStatusAndCurrency() = runTest {
+        db.accountDao().insert(account)
+        val base = transaction("tx-1", externalId = null, source = TransactionSource.MANUAL)
+        db.transactionDao().insertAtomically(
+            listOf(
+                base,
+                base.copy(id = "tx-2", amountMinor = 750),
+                base.copy(id = "tx-3", type = TransactionType.INCOME, amountMinor = 10_000),
+                base.copy(id = "tx-4", status = TransactionStatus.PENDING, amountMinor = 300),
+            ),
+        )
+
+        val rows = db.transactionDao().observeBalanceMovements().first().toSet()
+
+        assertEquals(
+            setOf(
+                BalanceMovementRow("acc-1", TransactionType.EXPENSE, TransactionStatus.BOOKED, "EUR", 2_000),
+                BalanceMovementRow("acc-1", TransactionType.INCOME, TransactionStatus.BOOKED, "EUR", 10_000),
+                BalanceMovementRow("acc-1", TransactionType.EXPENSE, TransactionStatus.PENDING, "EUR", 300),
+            ),
+            rows,
+        )
     }
 
     @Test

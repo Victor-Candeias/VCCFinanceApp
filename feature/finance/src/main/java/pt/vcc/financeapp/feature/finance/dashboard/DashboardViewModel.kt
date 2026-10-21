@@ -11,9 +11,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
-import pt.vcc.financeapp.core.data.repository.AccountRepository
 import pt.vcc.financeapp.core.data.repository.CategoryRepository
 import pt.vcc.financeapp.core.data.repository.TransactionRepository
+import pt.vcc.financeapp.core.data.usecase.ObserveAccountBalancesUseCase
+import pt.vcc.financeapp.core.model.AccountBalanceCalculator
+import pt.vcc.financeapp.core.model.Money
 import pt.vcc.financeapp.core.model.PeriodTotals
 import pt.vcc.financeapp.feature.finance.transactions.TransactionItem
 import pt.vcc.financeapp.feature.finance.transactions.toItems
@@ -23,6 +25,8 @@ data class DashboardUiState(
     val month: YearMonth,
     val isLoading: Boolean = true,
     val activeAccountCount: Int = 0,
+    /** Saldo das contas ativas, por moeda. */
+    val balanceTotals: List<Money> = emptyList(),
     val monthTotals: List<PeriodTotals> = emptyList(),
     val recentTransactions: List<TransactionItem> = emptyList(),
     val error: String? = null,
@@ -30,7 +34,7 @@ data class DashboardUiState(
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
-    accountRepository: AccountRepository,
+    observeAccountBalances: ObserveAccountBalancesUseCase,
     transactionRepository: TransactionRepository,
     categoryRepository: CategoryRepository,
     clock: Clock,
@@ -40,14 +44,17 @@ class DashboardViewModel @Inject constructor(
     val uiState: StateFlow<DashboardUiState> = run {
         val (from, to) = month.toInstantRange(clock.zone)
         combine(
-            accountRepository.observeAllAccounts(),
+            observeAccountBalances(),
             transactionRepository.observeInPeriod(from, to),
             categoryRepository.observeAllCategories(),
-        ) { accounts, transactions, categories ->
+        ) { balances, transactions, categories ->
+            val accounts = balances.map { it.account }
+            val active = balances.filter { it.account.isActive }
             DashboardUiState(
                 month = month,
                 isLoading = false,
-                activeAccountCount = accounts.count { it.isActive },
+                activeAccountCount = active.size,
+                balanceTotals = AccountBalanceCalculator.totalsByCurrency(active.map { it.balance }),
                 monthTotals = PeriodTotals.byCurrency(transactions),
                 recentTransactions = transactions.take(RECENT_COUNT).toItems(accounts, categories),
             )

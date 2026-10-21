@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import java.time.YearMonth
+import pt.vcc.financeapp.core.model.Money
 import pt.vcc.financeapp.core.model.PeriodTotals
 import pt.vcc.financeapp.feature.finance.R
 
@@ -58,6 +59,22 @@ internal fun PeriodTotalsCard(totals: List<PeriodTotals>, modifier: Modifier = M
                 TotalLine(stringResource(R.string.totals_income), total.income.formatted(), MaterialTheme.colorScheme.primary)
                 TotalLine(stringResource(R.string.totals_expenses), total.expenses.formatted(), MaterialTheme.colorScheme.error)
                 TotalLine(stringResource(R.string.totals_net), total.net.formatted(), MaterialTheme.colorScheme.onSurface)
+            }
+        }
+    }
+}
+
+/** Saldo total das contas, uma linha por moeda (sem conversões). */
+@Composable
+internal fun BalanceTotalsCard(totals: List<Money>, modifier: Modifier = Modifier) {
+    Card(modifier = modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            totals.forEach { total ->
+                TotalLine(
+                    stringResource(R.string.balance_total, total.currency),
+                    total.formatted(),
+                    if (total.isNegative) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                )
             }
         }
     }

@@ -21,6 +21,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import pt.vcc.financeapp.core.designsystem.components.EmptyState
 import pt.vcc.financeapp.feature.finance.R
 import pt.vcc.financeapp.feature.finance.transactions.TransactionRow
+import pt.vcc.financeapp.feature.finance.ui.BalanceTotalsCard
 import pt.vcc.financeapp.feature.finance.ui.LoadingState
 import pt.vcc.financeapp.feature.finance.ui.PeriodTotalsCard
 import pt.vcc.financeapp.feature.finance.ui.formatted
@@ -72,6 +73,12 @@ private fun DashboardContent(state: DashboardUiState, onAccountsClick: () -> Uni
             modifier = Modifier.padding(horizontal = 16.dp),
         )
         PeriodTotalsCard(state.monthTotals, Modifier.padding(horizontal = 16.dp))
+        Text(
+            text = stringResource(R.string.dashboard_balances),
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(horizontal = 16.dp),
+        )
+        BalanceTotalsCard(state.balanceTotals, Modifier.padding(horizontal = 16.dp))
         Text(
             text = pluralStringResource(R.plurals.dashboard_active_accounts, state.activeAccountCount, state.activeAccountCount),
             style = MaterialTheme.typography.bodyMedium,

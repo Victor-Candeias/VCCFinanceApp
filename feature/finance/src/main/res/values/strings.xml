@@ -120,4 +120,8 @@
     <string name="transfer_hint_totals">As transferências alteram o saldo das duas contas, mas não contam como receita nem como despesa.</string>
     <string name="transfer_delete_title">Apagar transferência?</string>
     <string name="transfer_delete_message">As duas pernas da transferência são removidas e os saldos das contas são recalculados.</string>
+
+    <string name="balance_total">Saldo total (%1$s)</string>
+    <string name="balance_pending">Pendente: %1$s</string>
+    <string name="dashboard_balances">Saldo das contas</string>
 </resources>
