@@ -15,6 +15,7 @@ import pt.vcc.financeapp.core.model.Account
 data class AccountsUiState(
     val isLoading: Boolean = true,
     val accounts: List<Account> = emptyList(),
+    val inactiveAccounts: List<Account> = emptyList(),
     val error: String? = null,
 )
 
@@ -22,8 +23,11 @@ data class AccountsUiState(
 class AccountsViewModel @Inject constructor(
     accountRepository: AccountRepository,
 ) : ViewModel() {
-    val uiState: StateFlow<AccountsUiState> = accountRepository.observeActiveAccounts()
-        .map { AccountsUiState(isLoading = false, accounts = it) }
+    val uiState: StateFlow<AccountsUiState> = accountRepository.observeAllAccounts()
+        .map { all ->
+            val (active, inactive) = all.partition(Account::isActive)
+            AccountsUiState(isLoading = false, accounts = active, inactiveAccounts = inactive)
+        }
         .catch { emit(AccountsUiState(isLoading = false, error = it.message)) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AccountsUiState())
 }

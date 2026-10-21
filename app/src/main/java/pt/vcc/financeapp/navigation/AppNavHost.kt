@@ -50,6 +50,7 @@ fun AppNavHost(navController: NavHostController = rememberNavController()) {
             modifier = Modifier.padding(innerPadding),
         ) {
             financeGraph(
+                navController = navController,
                 appVersion = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
                 onNavigateToAccounts = {
                     navController.navigateToTopLevel(TopLevelDestination.ACCOUNTS)

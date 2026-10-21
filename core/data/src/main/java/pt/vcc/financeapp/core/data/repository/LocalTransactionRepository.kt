@@ -22,6 +22,8 @@ internal class LocalTransactionRepository @Inject constructor(
 
     override suspend fun getById(id: String): Transaction? = dao.getById(id)?.asDomain()
 
+    override suspend fun countByAccount(accountId: String): Int = dao.countByAccount(accountId)
+
     override suspend fun create(transaction: Transaction) = dao.insert(transaction.asEntity())
 
     override suspend fun update(transaction: Transaction) = dao.update(transaction.asEntity())

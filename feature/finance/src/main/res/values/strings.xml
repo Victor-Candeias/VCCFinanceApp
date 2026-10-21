@@ -47,4 +47,31 @@
     <string name="settings_backup_description">Cópia de segurança encriptada</string>
     <string name="settings_about">Sobre</string>
     <string name="settings_version">VCCFinanceApp %1$s</string>
+
+    <string name="action_back">Voltar</string>
+    <string name="action_save">Guardar</string>
+    <string name="action_cancel">Cancelar</string>
+    <string name="amount_error_invalid">Valor inválido. Usa, por exemplo, 1.234,56.</string>
+
+    <string name="account_add">Nova conta</string>
+    <string name="accounts_inactive_section">Contas inativas</string>
+    <string name="account_editor_new_title">Nova conta</string>
+    <string name="account_editor_edit_title">Editar conta</string>
+    <string name="account_editor_not_found">A conta já não existe.</string>
+    <string name="account_field_name">Nome</string>
+    <string name="account_field_type">Tipo de conta</string>
+    <string name="account_field_institution">Instituição (opcional)</string>
+    <string name="account_field_currency">Moeda (ISO 4217)</string>
+    <string name="account_field_opening_balance">Saldo inicial</string>
+    <string name="account_opening_balance_hint">Pode ser negativo, por exemplo num cartão de crédito.</string>
+    <string name="account_error_blank_name">Indica um nome para a conta.</string>
+    <string name="account_error_name_too_long">O nome não pode ter mais de 60 caracteres.</string>
+    <string name="account_error_invalid_currency">Usa um código de 3 letras, por exemplo EUR.</string>
+    <string name="account_currency_locked">A moeda não pode mudar porque a conta já tem movimentos.</string>
+    <string name="account_deactivate">Desativar conta</string>
+    <string name="account_reactivate">Reativar conta</string>
+    <string name="account_deactivate_title">Desativar conta?</string>
+    <string name="account_deactivate_message">A conta deixa de aparecer no início e nos formulários. Os movimentos são mantidos e podes reativá-la a qualquer momento.</string>
+    <string name="account_reactivate_title">Reativar conta?</string>
+    <string name="account_reactivate_message">A conta volta a ficar disponível para novos movimentos.</string>
 </resources>

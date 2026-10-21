@@ -1,4 +1,4 @@
-package pt.vcc.financeapp.feature.finance
+package pt.vcc.financeapp.core.data.testing
 
 import java.time.Instant
 import kotlinx.coroutines.flow.Flow
@@ -22,6 +22,7 @@ class FakeAccountRepository(initial: List<Account> = emptyList()) : AccountRepos
     override suspend fun create(account: Account) = accounts.update { it + account }
     override suspend fun update(account: Account) = accounts.update { list -> list.map { if (it.id == account.id) account else it } }
     override suspend fun deactivate(id: String) = accounts.update { list -> list.map { if (it.id == id) it.copy(isActive = false) else it } }
+    override suspend fun reactivate(id: String) = accounts.update { list -> list.map { if (it.id == id) it.copy(isActive = true) else it } }
 }
 
 class FakeCategoryRepository(initial: List<Category> = emptyList()) : CategoryRepository {
@@ -47,6 +48,7 @@ class FakeTransactionRepository(initial: List<Transaction> = emptyList()) : Tran
     }
 
     override suspend fun getById(id: String): Transaction? = transactions.value.find { it.id == id }
+    override suspend fun countByAccount(accountId: String): Int = transactions.value.count { it.accountId == accountId }
     override suspend fun create(transaction: Transaction) = transactions.update { it + transaction }
     override suspend fun update(transaction: Transaction) =
         transactions.update { list -> list.map { if (it.id == transaction.id) transaction else it } }

@@ -30,4 +30,7 @@ interface AccountDao {
 
     @Query("UPDATE accounts SET isActive = 0 WHERE id = :id")
     suspend fun deactivate(id: String)
+
+    @Query("UPDATE accounts SET isActive = 1 WHERE id = :id")
+    suspend fun reactivate(id: String)
 }

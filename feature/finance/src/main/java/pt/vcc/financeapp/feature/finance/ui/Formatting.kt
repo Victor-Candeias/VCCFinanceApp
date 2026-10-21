@@ -34,6 +34,10 @@ internal fun Money.formatted(): String {
     }.format(value)
 }
 
+/** Valor editável num campo de texto (ex.: `-1234,50`), compatível com [pt.vcc.financeapp.core.model.AmountParser]. */
+internal fun formatAmountInput(amountMinor: Long, fractionDigits: Int): String =
+    BigDecimal.valueOf(amountMinor, fractionDigits).toPlainString().replace('.', ',')
+
 internal fun Instant.toLocalDate(zone: ZoneId = ZoneId.systemDefault()): LocalDate = atZone(zone).toLocalDate()
 
 internal fun LocalDate.formatted(): String = format(DateFormatter)

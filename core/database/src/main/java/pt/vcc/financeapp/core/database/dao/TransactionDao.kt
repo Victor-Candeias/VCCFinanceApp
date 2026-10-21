@@ -30,6 +30,9 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE transferGroupId = :transferGroupId")
     suspend fun getByTransferGroup(transferGroupId: String): List<TransactionEntity>
 
+    @Query("SELECT COUNT(*) FROM transactions WHERE accountId = :accountId")
+    suspend fun countByAccount(accountId: String): Int
+
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(transaction: TransactionEntity)
 

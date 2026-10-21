@@ -22,9 +22,9 @@ import pt.vcc.financeapp.core.model.Money
 import pt.vcc.financeapp.core.model.Transaction
 import pt.vcc.financeapp.core.model.TransactionSource
 import pt.vcc.financeapp.core.model.TransactionType
-import pt.vcc.financeapp.feature.finance.FakeAccountRepository
-import pt.vcc.financeapp.feature.finance.FakeCategoryRepository
-import pt.vcc.financeapp.feature.finance.FakeTransactionRepository
+import pt.vcc.financeapp.core.data.testing.FakeAccountRepository
+import pt.vcc.financeapp.core.data.testing.FakeCategoryRepository
+import pt.vcc.financeapp.core.data.testing.FakeTransactionRepository
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TransactionsViewModelTest {

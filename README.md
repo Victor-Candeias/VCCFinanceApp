@@ -674,6 +674,8 @@ Importar `collectAsStateWithLifecycle` de Lifecycle Compose; assegurar as depend
 
 **Implementação (S3-01):** cada separador tem um `@HiltViewModel` que combina os `Flow` dos repositórios (`DashboardViewModel`, `AccountsViewModel`, `TransactionsViewModel`). Início mostra o resumo do mês corrente (receitas, despesas e saldo do período por moeda, via `PeriodTotals.byCurrency` em `:core:model`) e os últimos movimentos; Movimentos lista o mês selecionado (navegação mês a mês, limites calculados no fuso do `Clock` injetado); Mais lista as áreas de definições (as ainda não implementadas aparecem desativadas) e a versão. Valores formatados em pt-PT sem `Float`/`Double` (`feature/finance/ui/Formatting.kt`).
 
+**Implementação (S3-02):** Contas tem um botão para criar conta e uma secção de contas inativas; tocar numa conta abre o editor (`AccountEditorRoute(accountId: String?)`). A validação vive em `SaveAccountUseCase` (`:core:data/usecase`): nome obrigatório (máx. 60 caracteres), moeda ISO 4217 de 3 letras e moeda bloqueada quando a conta já tem movimentos. O saldo inicial pode ser negativo e é lido com `AmountParser` (`:core:model`), que aceita o formato português (`1.234,56`) sem `Float`/`Double`. As contas nunca são apagadas: desativar/reativar pede confirmação e preserva os movimentos. Os fakes dos repositórios são partilhados entre módulos via `testFixtures` de `:core:data`.
+
 ## 10. Autenticação, PIN e biometria
 
 Componentes: `PinManager`, `BiometricAuthenticator`, `SessionManager` e `SecurityPreferences`.

@@ -17,7 +17,7 @@ owner: developer
 | ID | Title | Status | Created | Owner | Priority | Completed | Template | Blocked By | Spec |
 |---|---|---|---|---|---|---|---|---|---|
 | S3-01 | Ecrãs Dashboard, Contas, Movimentos e Definições | done | 2026-10-19 |  | high | 2026-10-21 |  | sprint-2/S2-05 |  |
-| S3-02 | Criar, editar e desativar contas | backlog | 2026-10-19 |  | high |  |  |  |  |
+| S3-02 | Criar, editar e desativar contas | done | 2026-10-19 |  | high | 2026-10-21 |  |  |  |
 | S3-03 | Criar receitas e despesas | backlog | 2026-10-19 |  | high |  |  |  |  |
 | S3-04 | Implementar transferências internas atómicas | backlog | 2026-10-19 |  | high |  |  |  |  |
 | S3-05 | Validar cálculo de saldos | backlog | 2026-10-19 |  | high |  |  |  |  |

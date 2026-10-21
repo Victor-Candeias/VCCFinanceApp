@@ -8,6 +8,10 @@ data object DashboardRoute
 @Serializable
 data object AccountsRoute
 
+/** Editor de conta; [accountId] nulo cria uma conta nova. */
+@Serializable
+data class AccountEditorRoute(val accountId: String? = null)
+
 @Serializable
 data object TransactionsRoute
 

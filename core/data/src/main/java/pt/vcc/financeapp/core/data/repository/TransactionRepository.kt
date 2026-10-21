@@ -11,6 +11,7 @@ interface TransactionRepository {
     fun observeInPeriod(fromInclusive: Instant, toExclusive: Instant): Flow<List<Transaction>>
 
     suspend fun getById(id: String): Transaction?
+    suspend fun countByAccount(accountId: String): Int
     suspend fun create(transaction: Transaction)
     suspend fun update(transaction: Transaction)
     suspend fun delete(transaction: Transaction)

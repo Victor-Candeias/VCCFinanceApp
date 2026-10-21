@@ -1,4 +1,4 @@
-package pt.vcc.financeapp.feature.finance.di
+package pt.vcc.financeapp.core.data.di
 
 import dagger.Module
 import dagger.Provides

@@ -13,4 +13,5 @@ interface AccountRepository {
 
     /** As contas nunca são apagadas, para preservar o histórico de movimentos. */
     suspend fun deactivate(id: String)
+    suspend fun reactivate(id: String)
 }
