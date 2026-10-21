@@ -715,6 +715,8 @@ biometricPrompt.authenticate(promptInfo)
 
 `biometricPrompt` deve ser inicializado numa Activity/Fragment compatível e ter callback de sucesso/erro. O PIN da app é um mecanismo separado da credencial do dispositivo. Guardar apenas verificador derivado por KDF apropriada com salt aleatório; limitar tentativas; não registar PIN em logs. Usar Keystore para proteger chaves criptográficas; a existência do Keystore **não** encripta automaticamente o ficheiro SQLite. Escolher e testar solução de encriptação em repouso. Bloquear após inatividade e proteger ecrã de aplicações recentes (`FLAG_SECURE` onde apropriado). Proteger exportações e backups com reautenticação.
 
+**Implementação (S4-01):** módulo `:core:security`. `PinPolicy` aceita 4 a 8 algarismos e rejeita PINs triviais (todos iguais ou sequências como 1234/9876). O verificador guardado é `HMAC(PBKDF2-HMAC-SHA256(pin, salt 16 B, 210 000 iterações))`, onde o HMAC usa uma chave não exportável do Android Keystore (`KeystorePinPepper`), para que uma cópia do verificador não permita ataques de força bruta fora do dispositivo. Salt, verificador (Base64) e iterações ficam num DataStore próprio (`security`); o PIN só existe em `CharArray` limpos depois de usados. `SessionManager` expõe `SessionState` (`INITIALIZING`/`SETUP_REQUIRED`/`LOCKED`/`UNLOCKED`) e `AuthenticationGate` só compõe a navegação da app em `UNLOCKED`; antes mostra o onboarding (boas-vindas → criar PIN → confirmar) ou o ecrã de desbloqueio. `isPinConfigured` é um `Flow<Boolean>`.
+
 Fluxo: iniciar → verificar configuração de PIN → configurar ou desbloquear → biometria ou PIN → `Unlocked` → dashboard.
 
 ## 11. Importação de movimentos
@@ -891,3 +893,4 @@ A primeira milestone deve produzir um **projeto Android Studio compilável** com
 | 19/10/2026 | Matriz de versões fixada a partir do ambiente local (§4); Kotlin/KSP/Hilt a confirmar no primeiro build. |
 | 19/10/2026 | Matriz de versões confirmada com `assembleDebug` (S1-03), sem ajustes. |
 | 21/10/2026 | Transferências internas guardadas como duas pernas `EXPENSE`/`INCOME` ligadas por `transferGroupId` (sem usar `TransactionType.TRANSFER` nem migração); só entre contas da mesma moeda. |
+| 21/10/2026 | Verificador do PIN = HMAC (chave do Keystore) sobre PBKDF2-HMAC-SHA256 com 210 000 iterações; `SessionState` implementado como enum com `INITIALIZING` (estado antes de ler o DataStore) e `isPinConfigured` como `Flow`. |

@@ -124,4 +124,25 @@
     <string name="balance_total">Saldo total (%1$s)</string>
     <string name="balance_pending">Pendente: %1$s</string>
     <string name="dashboard_balances">Saldo das contas</string>
+
+    <string name="onboarding_title">Bem-vindo ao VCC Finance</string>
+    <string name="onboarding_message">Os teus dados financeiros ficam apenas neste dispositivo. Para os proteger, começa por criar um PIN de acesso à app.</string>
+    <string name="onboarding_start">Criar PIN</string>
+    <string name="pin_setup_create_title">Cria um PIN</string>
+    <string name="pin_setup_create_subtitle">Escolhe entre 4 e 8 algarismos. Evita datas de nascimento e sequências.</string>
+    <string name="pin_setup_confirm_title">Confirma o PIN</string>
+    <string name="pin_setup_confirm_subtitle">Introduz novamente o mesmo PIN.</string>
+    <string name="pin_error_length">O PIN tem de ter entre 4 e 8 algarismos.</string>
+    <string name="pin_error_too_simple">Esse PIN é demasiado fácil de adivinhar. Evita algarismos repetidos ou seguidos.</string>
+    <string name="pin_error_mismatch">Os PINs não coincidem. Começa de novo.</string>
+    <string name="pin_error_save_failed">Não foi possível guardar o PIN. Tenta novamente.</string>
+    <plurals name="pin_digits_entered">
+        <item quantity="one">%1$d algarismo introduzido</item>
+        <item quantity="other">%1$d algarismos introduzidos</item>
+    </plurals>
+    <string name="pin_delete">Apagar algarismo</string>
+    <string name="pin_confirm">Confirmar PIN</string>
+    <string name="unlock_title">App bloqueada</string>
+    <string name="unlock_subtitle">Introduz o teu PIN para continuar.</string>
+    <string name="unlock_wrong_pin">PIN incorreto.</string>
 </resources>

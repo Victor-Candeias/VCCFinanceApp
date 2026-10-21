@@ -35,6 +35,7 @@ dependencies {
     implementation(project(":core:model"))
     implementation(project(":core:data"))
     implementation(project(":core:designsystem"))
+    implementation(project(":core:security"))
 
     api(libs.navigation.compose)
     implementation(libs.lifecycle.runtime.compose)
@@ -50,4 +51,5 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(testFixtures(project(":core:data")))
+    testImplementation(testFixtures(project(":core:security")))
 }
