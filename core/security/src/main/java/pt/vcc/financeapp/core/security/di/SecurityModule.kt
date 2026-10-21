@@ -13,6 +13,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Qualifier
 import javax.inject.Singleton
+import pt.vcc.financeapp.core.security.AndroidBiometricAuthenticator
+import pt.vcc.financeapp.core.security.BiometricAuthenticator
 import pt.vcc.financeapp.core.security.DataStoreSecurityStore
 import pt.vcc.financeapp.core.security.KeystorePinPepper
 import pt.vcc.financeapp.core.security.PinPepper
@@ -30,6 +32,9 @@ internal abstract class SecurityModule {
 
     @Binds
     abstract fun bindPinPepper(impl: KeystorePinPepper): PinPepper
+
+    @Binds
+    abstract fun bindBiometricAuthenticator(impl: AndroidBiometricAuthenticator): BiometricAuthenticator
 
     companion object {
         @Provides

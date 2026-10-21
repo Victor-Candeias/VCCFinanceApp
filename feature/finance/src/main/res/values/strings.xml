@@ -161,4 +161,28 @@
     <string name="change_pin_current_subtitle">Introduz o PIN que usas agora.</string>
     <string name="change_pin_new_title">Novo PIN</string>
     <string name="change_pin_confirm_title">Confirma o novo PIN</string>
-    <string name="change_pin_done">PIN alterado.</string></resources>
+    <string name="change_pin_done">PIN alterado.</string>
+    <string name="security_biometric">Desbloquear com biometria</string>
+    <string name="security_biometric_description">Impressão digital ou rosto (classe forte). O PIN continua disponível.</string>
+    <string name="biometric_none_enrolled">Regista uma impressão digital ou rosto nas definições do dispositivo para usar esta opção.</string>
+    <string name="biometric_unavailable">Este dispositivo não tem biometria forte disponível.</string>
+    <string name="biometric_enroll_failed">Não foi possível ativar a biometria. Tenta novamente.</string>
+    <string name="biometric_prompt_title">Desbloquear VCC Finance</string>
+    <string name="biometric_unlock_subtitle">Confirma a tua identidade</string>
+    <string name="biometric_enroll_subtitle">Confirma a biometria para a ativar</string>
+    <string name="biometric_use_pin">Usar PIN</string>
+    <string name="biometric_use">Usar biometria</string>
+    <string name="biometric_invalidated">As biometrias do dispositivo mudaram. Entra com o PIN e volta a ativar a biometria em Segurança.</string>
+    <string name="security_auto_lock">Bloqueio automático</string>
+    <string name="security_auto_lock_description">Tempo em segundo plano ou sem utilização até a app pedir novamente o PIN (sem utilização, no mínimo 30 segundos).</string>
+    <string name="auto_lock_immediately">Imediatamente</string>
+    <plurals name="auto_lock_seconds">
+        <item quantity="one">%1$d segundo</item>
+        <item quantity="other">%1$d segundos</item>
+    </plurals>
+    <plurals name="auto_lock_minutes">
+        <item quantity="one">%1$d minuto</item>
+        <item quantity="other">%1$d minutos</item>
+    </plurals>
+</resources>
+

@@ -8,6 +8,11 @@ import java.time.ZoneOffset
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import androidx.fragment.app.FragmentActivity
+import pt.vcc.financeapp.core.security.BiometricAuthenticator
+import pt.vcc.financeapp.core.security.BiometricAvailability
+import pt.vcc.financeapp.core.security.BiometricPromptTexts
+import pt.vcc.financeapp.core.security.BiometricResult
 import pt.vcc.financeapp.core.security.PinPepper
 import pt.vcc.financeapp.core.security.SecurityPreferences
 import pt.vcc.financeapp.core.security.SecurityStore
@@ -54,4 +59,26 @@ class MutableClock(var instant: Instant = Instant.parse("2026-10-21T10:00:00Z"))
     override fun withZone(zone: ZoneId?): Clock = this
 
     override fun instant(): Instant = instant
+}
+class FakeBiometricAuthenticator(
+    var availability: BiometricAvailability = BiometricAvailability.AVAILABLE,
+    var nextResult: BiometricResult = BiometricResult.Success,
+) : BiometricAuthenticator {
+    var disabled = false
+        private set
+
+    override fun availability(): BiometricAvailability = availability
+
+    override fun enroll(activity: FragmentActivity, texts: BiometricPromptTexts, onResult: (BiometricResult) -> Unit) {
+        disabled = false
+        onResult(nextResult)
+    }
+
+    override fun authenticate(activity: FragmentActivity, texts: BiometricPromptTexts, onResult: (BiometricResult) -> Unit) {
+        onResult(nextResult)
+    }
+
+    override fun disable() {
+        disabled = true
+    }
 }

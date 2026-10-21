@@ -18,7 +18,7 @@ owner: developer
 |---|---|---|---|---|---|---|---|---|---|
 | S4-01 | Onboarding e configuração de PIN | done | 2026-10-19 |  | high | 2026-10-22 |  | sprint-3/S3-05 |  |
 | S4-02 | Verificação segura do PIN e limite de tentativas | done | 2026-10-19 |  | high | 2026-10-22 |  |  |  |
-| S4-03 | BiometricPrompt e SessionManager | backlog | 2026-10-19 |  | high |  |  |  |  |
+| S4-03 | BiometricPrompt e SessionManager | done | 2026-10-19 |  | high | 2026-10-22 |  |  |  |
 | S4-04 | Encriptação de dados sensíveis e política de bloqueio | backlog | 2026-10-19 |  | high |  |  |  |  |
 | S4-05 | Testar cenários de recuperação | backlog | 2026-10-19 |  | high |  |  |  |  |
 <!-- /maestru:work-items-list -->

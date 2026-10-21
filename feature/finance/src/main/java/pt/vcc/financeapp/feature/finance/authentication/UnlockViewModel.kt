@@ -1,5 +1,6 @@
 package pt.vcc.financeapp.feature.finance.authentication
 
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -13,8 +14,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import pt.vcc.financeapp.core.security.BiometricAuthenticator
+import pt.vcc.financeapp.core.security.BiometricAvailability
+import pt.vcc.financeapp.core.security.BiometricPromptTexts
+import pt.vcc.financeapp.core.security.BiometricResult
 import pt.vcc.financeapp.core.security.PinManager
 import pt.vcc.financeapp.core.security.PinVerification
+import pt.vcc.financeapp.core.security.SecurityStore
 import pt.vcc.financeapp.core.security.SessionManager
 
 data class UnlockUiState(
@@ -24,8 +30,16 @@ data class UnlockUiState(
     /** Segundos até ser possível tentar de novo; 0 sem bloqueio. */
     val lockoutSeconds: Long = 0,
     val isVerifying: Boolean = false,
+    /** Biometria ativada nas definições e disponível no dispositivo. */
+    val biometricAvailable: Boolean = false,
+    /** Pedido pendente para a UI mostrar o BiometricPrompt. */
+    val biometricPromptPending: Boolean = false,
+    val biometricInvalidated: Boolean = false,
 ) {
     val canEnterPin: Boolean get() = !isVerifying && lockoutSeconds == 0L
+
+    /** Durante o bloqueio por tentativas a biometria também fica indisponível. */
+    val canUseBiometric: Boolean get() = biometricAvailable && canEnterPin
 }
 
 @HiltViewModel
@@ -33,6 +47,8 @@ class UnlockViewModel @Inject constructor(
     private val pinManager: PinManager,
     private val sessionManager: SessionManager,
     private val clock: Clock,
+    private val securityStore: SecurityStore,
+    private val biometricAuthenticator: BiometricAuthenticator,
 ) : ViewModel() {
     private val buffer = PinBuffer()
     private var countdown: Job? = null
@@ -40,10 +56,40 @@ class UnlockViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(UnlockUiState())
     val uiState: StateFlow<UnlockUiState> = _uiState.asStateFlow()
 
-    init {
-        viewModelScope.launch { pinManager.lockoutEnd()?.let(::startLockout) }
+    /** Chamado sempre que o ecrã de desbloqueio aparece (a app pode bloquear várias vezes). */
+    fun onShown() {
+        viewModelScope.launch {
+            val lockout = pinManager.lockoutEnd()
+            lockout?.let(::startLockout)
+            val biometric = securityStore.current().biometricEnabled &&
+                biometricAuthenticator.availability() == BiometricAvailability.AVAILABLE
+            _uiState.update {
+                it.copy(biometricAvailable = biometric, biometricPromptPending = biometric && lockout == null)
+            }
+        }
     }
 
+    fun onBiometricRequested() {
+        if (_uiState.value.canUseBiometric) _uiState.update { it.copy(biometricPromptPending = true) }
+    }
+
+    fun authenticateWithBiometric(activity: FragmentActivity, texts: BiometricPromptTexts) {
+        if (!_uiState.value.biometricPromptPending) return
+        _uiState.update { it.copy(biometricPromptPending = false) }
+        if (!_uiState.value.canUseBiometric) return
+        biometricAuthenticator.authenticate(activity, texts, ::onBiometricResult)
+    }
+
+    fun onBiometricResult(result: BiometricResult) {
+        when (result) {
+            BiometricResult.Success -> if (_uiState.value.canUseBiometric) sessionManager.unlock()
+            BiometricResult.KeyInvalidated -> {
+                _uiState.update { it.copy(biometricAvailable = false, biometricInvalidated = true) }
+                viewModelScope.launch { securityStore.update { it.copy(biometricEnabled = false) } }
+            }
+            BiometricResult.Cancelled, is BiometricResult.Error -> Unit
+        }
+    }
     fun onDigit(digit: Char) {
         if (!_uiState.value.canEnterPin) return
         if (buffer.append(digit)) _uiState.update { it.copy(enteredDigits = buffer.length) }

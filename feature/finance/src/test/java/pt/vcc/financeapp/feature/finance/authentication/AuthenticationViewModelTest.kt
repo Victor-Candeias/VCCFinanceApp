@@ -3,6 +3,7 @@ package pt.vcc.financeapp.feature.finance.authentication
 import java.time.Duration
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
@@ -14,10 +15,14 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import pt.vcc.financeapp.core.security.AutoLockController
+import pt.vcc.financeapp.core.security.BiometricAvailability
+import pt.vcc.financeapp.core.security.BiometricResult
 import pt.vcc.financeapp.core.security.PinManager
 import pt.vcc.financeapp.core.security.PinVerification
 import pt.vcc.financeapp.core.security.SessionManager
 import pt.vcc.financeapp.core.security.SessionState
+import pt.vcc.financeapp.core.security.testing.FakeBiometricAuthenticator
 import pt.vcc.financeapp.core.security.testing.FakePinPepper
 import pt.vcc.financeapp.core.security.testing.InMemorySecurityStore
 import pt.vcc.financeapp.core.security.testing.MutableClock
@@ -29,6 +34,9 @@ class AuthenticationViewModelTest {
     private val clock = MutableClock()
     private val pinManager = PinManager(store, FakePinPepper(), clock, dispatcher, iterations = 1_000)
     private val sessionManager = SessionManager()
+    private val biometric = FakeBiometricAuthenticator()
+
+    private fun unlockViewModel() = UnlockViewModel(pinManager, sessionManager, clock, store, biometric).apply { onShown() }
 
     @Before
     fun setUp() {
@@ -91,7 +99,7 @@ class AuthenticationViewModelTest {
     fun unlockAcceptsOnlyTheConfiguredPin() = runTest(dispatcher) {
         pinManager.configurePin("2580".toCharArray())
         sessionManager.initialize(pinConfigured = true)
-        val vm = UnlockViewModel(pinManager, sessionManager, clock)
+        val vm = unlockViewModel()
 
         vm.type("2581")
         assertEquals(4, vm.uiState.value.remainingAttempts)
@@ -106,7 +114,7 @@ class AuthenticationViewModelTest {
     fun unlockShowsLockoutCountdownAndBlocksInput() = runTest(dispatcher) {
         pinManager.configurePin("2580".toCharArray())
         sessionManager.initialize(pinConfigured = true)
-        val vm = UnlockViewModel(pinManager, sessionManager, clock)
+        val vm = unlockViewModel()
 
         repeat(PinManager.MAX_ATTEMPTS) { vm.type("1397") }
         assertEquals(30L, vm.uiState.value.lockoutSeconds)
@@ -115,7 +123,7 @@ class AuthenticationViewModelTest {
         assertEquals(0, vm.uiState.value.enteredDigits)
 
         // Um ViewModel novo (app reiniciada) continua bloqueado.
-        assertEquals(30L, UnlockViewModel(pinManager, sessionManager, clock).uiState.value.lockoutSeconds)
+        assertEquals(30L, unlockViewModel().uiState.value.lockoutSeconds)
 
         advanceTimeBy(30_001)
         clock.advance(Duration.ofSeconds(31))
@@ -155,10 +163,90 @@ class AuthenticationViewModelTest {
     }
 
     @Test
-    fun sessionViewModelStartsLockedWhenPinExists() = runTest(dispatcher) {        pinManager.configurePin("2580".toCharArray())
+    fun sessionViewModelStartsLockedWhenPinExists() = runTest(dispatcher) {
+        pinManager.configurePin("2580".toCharArray())
 
-        val vm = SessionViewModel(pinManager, sessionManager)
+        val vm = SessionViewModel(pinManager, sessionManager, store, AutoLockController(sessionManager, clock))
 
         assertEquals(SessionState.LOCKED, vm.sessionState.value)
+    }
+
+    @Test
+    fun biometricUnlockPromptsAutomaticallyAndUnlocks() = runTest(dispatcher) {
+        pinManager.configurePin("2580".toCharArray())
+        store.update { it.copy(biometricEnabled = true) }
+        sessionManager.initialize(pinConfigured = true)
+        val vm = unlockViewModel()
+
+        assertTrue(vm.uiState.value.biometricPromptPending)
+        vm.onBiometricResult(BiometricResult.Cancelled)
+        assertEquals(SessionState.LOCKED, sessionManager.state.value)
+
+        vm.onBiometricResult(BiometricResult.Success)
+        assertEquals(SessionState.UNLOCKED, sessionManager.state.value)
+    }
+
+    @Test
+    fun biometricIsUnavailableDuringPinLockout() = runTest(dispatcher) {
+        pinManager.configurePin("2580".toCharArray())
+        store.update { it.copy(biometricEnabled = true) }
+        sessionManager.initialize(pinConfigured = true)
+        unlockViewModel().apply { repeat(PinManager.MAX_ATTEMPTS) { type("1397") } }
+
+        val vm = unlockViewModel()
+        assertFalse(vm.uiState.value.biometricPromptPending)
+        assertFalse(vm.uiState.value.canUseBiometric)
+        vm.onBiometricResult(BiometricResult.Success)
+        assertEquals(SessionState.LOCKED, sessionManager.state.value)
+    }
+
+    @Test
+    fun invalidatedBiometricKeyDisablesBiometric() = runTest(dispatcher) {
+        pinManager.configurePin("2580".toCharArray())
+        store.update { it.copy(biometricEnabled = true) }
+        sessionManager.initialize(pinConfigured = true)
+        val vm = unlockViewModel()
+
+        vm.onBiometricResult(BiometricResult.KeyInvalidated)
+
+        assertTrue(vm.uiState.value.biometricInvalidated)
+        assertFalse(vm.uiState.value.canUseBiometric)
+        assertFalse(store.value.biometricEnabled)
+        assertEquals(SessionState.LOCKED, sessionManager.state.value)
+    }
+
+    @Test
+    fun securitySettingsEnableBiometricOnlyAfterSuccessfulPrompt() = runTest(dispatcher) {
+        val vm = SecuritySettingsViewModel(store, biometric)
+        backgroundScope.launch { vm.uiState.collect {} }
+
+        vm.onBiometricToggled(true)
+        assertTrue(vm.uiState.value.enrollPending)
+        vm.onEnrollResult(BiometricResult.Error("falhou"))
+        assertFalse(store.value.biometricEnabled)
+        assertEquals(BiometricNotice.ENROLL_FAILED, vm.uiState.value.notice)
+
+        vm.onEnrollResult(BiometricResult.Success)
+        assertTrue(store.value.biometricEnabled)
+
+        vm.onBiometricToggled(false)
+        assertFalse(store.value.biometricEnabled)
+        assertTrue(biometric.disabled)
+
+        vm.onAutoLockSelected(300)
+        vm.onAutoLockSelected(7)
+        assertEquals(300, store.value.autoLockTimeoutSeconds)
+    }
+
+    @Test
+    fun securitySettingsIgnoreEnableWithoutEnrolledBiometrics() = runTest(dispatcher) {
+        biometric.availability = BiometricAvailability.NONE_ENROLLED
+        val vm = SecuritySettingsViewModel(store, biometric)
+        backgroundScope.launch { vm.uiState.collect {} }
+
+        vm.onBiometricToggled(true)
+
+        assertFalse(vm.uiState.value.enrollPending)
+        assertEquals(BiometricAvailability.NONE_ENROLLED, vm.uiState.value.biometricAvailability)
     }
 }

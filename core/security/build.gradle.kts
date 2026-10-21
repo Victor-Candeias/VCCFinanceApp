@@ -33,6 +33,8 @@ kotlin {
 dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.datastore.preferences)
+    // Exposto porque a UI passa a FragmentActivity que mostra o BiometricPrompt.
+    api(libs.biometric)
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
@@ -41,4 +43,5 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
 
     testFixturesImplementation(libs.kotlinx.coroutines.core)
+    testFixturesImplementation(libs.biometric)
 }

@@ -1,6 +1,7 @@
 package pt.vcc.financeapp.feature.finance.authentication
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -16,16 +17,21 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.fragment.app.FragmentActivity
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import pt.vcc.financeapp.core.security.BiometricPromptTexts
 import pt.vcc.financeapp.core.security.SessionState
 import pt.vcc.financeapp.feature.finance.R
 import pt.vcc.financeapp.feature.finance.ui.LoadingState
@@ -40,13 +46,17 @@ fun AuthenticationGate(
     content: @Composable () -> Unit,
 ) {
     val state by viewModel.sessionState.collectAsStateWithLifecycle()
+    // O conteúdo sai da composição enquanto bloqueado; o estado guardável (navegação) é restaurado ao desbloquear.
+    val stateHolder = rememberSaveableStateHolder()
     when (state) {
         SessionState.INITIALIZING -> Surface(Modifier.fillMaxSize()) { LoadingState() }
         SessionState.SETUP_REQUIRED -> SetupPinScreen()
         SessionState.LOCKED -> UnlockScreen()
-        SessionState.UNLOCKED -> content()
+        SessionState.UNLOCKED -> stateHolder.SaveableStateProvider(UNLOCKED_CONTENT_KEY) { content() }
     }
 }
+
+private const val UNLOCKED_CONTENT_KEY = "unlocked-content"
 
 @Composable
 internal fun SetupPinScreen(viewModel: SetupPinViewModel = hiltViewModel()) {
@@ -107,11 +117,18 @@ private fun WelcomeContent(onStart: () -> Unit) {
 @Composable
 internal fun UnlockScreen(viewModel: UnlockViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val activity = LocalActivity.current as? FragmentActivity
+    val texts = biometricPromptTexts(R.string.biometric_unlock_subtitle)
+    LaunchedEffect(Unit) { viewModel.onShown() }
+    LaunchedEffect(state.biometricPromptPending) {
+        if (state.biometricPromptPending && activity != null) viewModel.authenticateWithBiometric(activity, texts)
+    }
     PinEntryLayout(
         title = stringResource(R.string.unlock_title),
         subtitle = stringResource(R.string.unlock_subtitle),
         enteredDigits = state.enteredDigits,
-        message = unlockMessage(state.lockoutSeconds, state.remainingAttempts),
+        message = unlockMessage(state.lockoutSeconds, state.remainingAttempts)
+            ?: if (state.biometricInvalidated) stringResource(R.string.biometric_invalidated) else null,
         enabled = state.canEnterPin,
         onDigit = viewModel::onDigit,
         onDelete = viewModel::onDelete,
@@ -120,10 +137,22 @@ internal fun UnlockScreen(viewModel: UnlockViewModel = hiltViewModel()) {
             if (state.isVerifying) {
                 Spacer(Modifier.height(16.dp))
                 CircularProgressIndicator()
+            } else if (state.canUseBiometric) {
+                Spacer(Modifier.height(16.dp))
+                TextButton(onClick = viewModel::onBiometricRequested) {
+                    Text(stringResource(R.string.biometric_use))
+                }
             }
         },
     )
 }
+
+@Composable
+internal fun biometricPromptTexts(subtitleRes: Int) = BiometricPromptTexts(
+    title = stringResource(R.string.biometric_prompt_title),
+    subtitle = stringResource(subtitleRes),
+    negativeButton = stringResource(R.string.biometric_use_pin),
+)
 
 @Composable
 internal fun unlockMessage(lockoutSeconds: Long, remainingAttempts: Int?): String? = when {
