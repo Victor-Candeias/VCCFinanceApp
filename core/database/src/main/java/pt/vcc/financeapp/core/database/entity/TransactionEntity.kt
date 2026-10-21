@@ -11,7 +11,8 @@ import pt.vcc.financeapp.core.model.TransactionType
 
 /**
  * `amountMinor` é sempre positivo; `type` indica a direção. Uma transferência interna são dois
- * movimentos `TRANSFER` ligados por `transferGroupId` (README §5).
+ * movimentos ligados por `transferGroupId`: `EXPENSE` na conta de origem e `INCOME` na de destino
+ * (README §5 e §18).
  */
 @Entity(
     tableName = "transactions",

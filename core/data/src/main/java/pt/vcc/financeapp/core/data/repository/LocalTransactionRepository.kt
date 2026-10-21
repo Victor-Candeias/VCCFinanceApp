@@ -30,6 +30,15 @@ internal class LocalTransactionRepository @Inject constructor(
 
     override suspend fun delete(transaction: Transaction) = dao.delete(transaction.asEntity())
 
+    override suspend fun getTransferLegs(transferGroupId: String): List<Transaction> =
+        dao.getByTransferGroup(transferGroupId).map(TransactionEntity::asDomain)
+
+    override suspend fun createTransfer(legs: List<Transaction>) = dao.insertAtomically(legs.map(Transaction::asEntity))
+
+    override suspend fun updateTransfer(legs: List<Transaction>) = dao.updateAtomically(legs.map(Transaction::asEntity))
+
+    override suspend fun deleteTransfer(transferGroupId: String) = dao.deleteTransferGroup(transferGroupId)
+
     override suspend fun insertIgnoringDuplicates(transactions: List<Transaction>): Int {
         if (transactions.isEmpty()) return 0
         return dao.insertAll(transactions.map(Transaction::asEntity)).count { it != -1L }

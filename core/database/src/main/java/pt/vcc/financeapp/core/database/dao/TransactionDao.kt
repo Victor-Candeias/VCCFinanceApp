@@ -40,8 +40,16 @@ interface TransactionDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAll(transactions: List<TransactionEntity>): List<Long>
 
+    /** Tudo ou nada: o Room insere a lista numa única transação e reverte se uma linha falhar. */
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertAtomically(transactions: List<TransactionEntity>)
+
     @Update
     suspend fun update(transaction: TransactionEntity)
+
+    /** Atualiza a lista numa única transação. */
+    @Update
+    suspend fun updateAtomically(transactions: List<TransactionEntity>)
 
     @Delete
     suspend fun delete(transaction: TransactionEntity)
@@ -49,7 +57,10 @@ interface TransactionDao {
     @Query("DELETE FROM transactions WHERE transferGroupId = :transferGroupId")
     suspend fun deleteTransferGroup(transferGroupId: String)
 
-    /** Não é o saldo final: exclui transferências e saldo inicial (README §6). */
+    /**
+     * Soma dos movimentos confirmados (receitas menos despesas, incluindo pernas de transferência).
+     * Não é o saldo final: falta o saldo inicial da conta (ver `AccountBalanceCalculator`).
+     */
     @Query(
         """
         SELECT COALESCE(SUM(CASE

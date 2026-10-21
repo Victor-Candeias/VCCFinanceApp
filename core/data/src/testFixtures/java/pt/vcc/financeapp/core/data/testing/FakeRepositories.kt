@@ -58,6 +58,14 @@ class FakeTransactionRepository(initial: List<Transaction> = emptyList()) : Tran
     override suspend fun update(transaction: Transaction) =
         transactions.update { list -> list.map { if (it.id == transaction.id) transaction else it } }
     override suspend fun delete(transaction: Transaction) = transactions.update { list -> list.filterNot { it.id == transaction.id } }
+    override suspend fun getTransferLegs(transferGroupId: String): List<Transaction> =
+        transactions.value.filter { it.transferGroupId == transferGroupId }
+    override suspend fun createTransfer(legs: List<Transaction>) = transactions.update { it + legs }
+    override suspend fun updateTransfer(legs: List<Transaction>) = transactions.update { list ->
+        list.map { current -> legs.find { it.id == current.id } ?: current }
+    }
+    override suspend fun deleteTransfer(transferGroupId: String) =
+        transactions.update { list -> list.filterNot { it.transferGroupId == transferGroupId } }
     override suspend fun insertIgnoringDuplicates(transactions: List<Transaction>): Int {
         this.transactions.update { it + transactions }
         return transactions.size

@@ -16,21 +16,28 @@ import pt.vcc.financeapp.feature.finance.R
 import pt.vcc.financeapp.feature.finance.ui.formatted
 import pt.vcc.financeapp.feature.finance.ui.toLocalDate
 
-/** Movimento com os nomes da conta e da categoria já resolvidos para apresentação. */
+/**
+ * Movimento com os nomes da conta e da categoria já resolvidos para apresentação. Numa perna de
+ * transferência, [counterpartAccountName] é a conta da outra perna (se estiver na mesma lista).
+ */
 data class TransactionItem(
     val transaction: Transaction,
     val accountName: String,
     val categoryName: String?,
+    val counterpartAccountName: String? = null,
 )
 
 internal fun List<Transaction>.toItems(accounts: List<Account>, categories: List<Category>): List<TransactionItem> {
     val accountNames = accounts.associate { it.id to it.name }
     val categoryNames = categories.associate { it.id to it.name }
+    val legsByGroup = filter { it.transferGroupId != null }.groupBy { it.transferGroupId }
     return map { tx ->
+        val counterpart = tx.transferGroupId?.let { group -> legsByGroup[group]?.firstOrNull { it.id != tx.id } }
         TransactionItem(
             transaction = tx,
             accountName = accountNames[tx.accountId].orEmpty(),
             categoryName = tx.categoryId?.let(categoryNames::get),
+            counterpartAccountName = counterpart?.let { accountNames[it.accountId] },
         )
     }
 }
@@ -48,6 +55,12 @@ internal fun TransactionRow(
         add(tx.bookingDate.toLocalDate().formatted())
         add(item.accountName)
         when {
+            tx.isInternalTransfer && item.counterpartAccountName != null -> add(
+                stringResource(
+                    if (isIncome) R.string.transaction_transfer_from else R.string.transaction_transfer_to,
+                    item.counterpartAccountName,
+                ),
+            )
             tx.isInternalTransfer -> add(stringResource(R.string.transaction_transfer_label))
             item.categoryName != null -> add(item.categoryName)
         }

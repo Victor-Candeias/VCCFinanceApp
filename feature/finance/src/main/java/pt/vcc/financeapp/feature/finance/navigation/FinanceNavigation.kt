@@ -13,6 +13,7 @@ import pt.vcc.financeapp.feature.finance.settings.SettingsEntry
 import pt.vcc.financeapp.feature.finance.settings.SettingsScreen
 import pt.vcc.financeapp.feature.finance.transactions.TransactionEditorScreen
 import pt.vcc.financeapp.feature.finance.transactions.TransactionsScreen
+import pt.vcc.financeapp.feature.finance.transactions.TransferEditorScreen
 
 /**
  * Regista os destinos financeiros no grafo de navegação da app. A navegação entre separadores é
@@ -38,11 +39,22 @@ fun NavGraphBuilder.financeGraph(
     composable<TransactionsRoute> {
         TransactionsScreen(
             onAddTransaction = { navController.navigate(TransactionEditorRoute()) },
-            onTransactionClick = { navController.navigate(TransactionEditorRoute(it)) },
+            onAddTransfer = { navController.navigate(TransferEditorRoute()) },
+            onTransactionClick = { tx ->
+                val groupId = tx.transferGroupId
+                if (groupId != null) {
+                    navController.navigate(TransferEditorRoute(groupId))
+                } else {
+                    navController.navigate(TransactionEditorRoute(tx.id))
+                }
+            },
         )
     }
     composable<TransactionEditorRoute> {
         TransactionEditorScreen(onBack = { navController.popBackStack() })
+    }
+    composable<TransferEditorRoute> {
+        TransferEditorScreen(onBack = { navController.popBackStack() })
     }
     composable<ReportsRoute> { ReportsScreen() }
     composable<SettingsRoute> {

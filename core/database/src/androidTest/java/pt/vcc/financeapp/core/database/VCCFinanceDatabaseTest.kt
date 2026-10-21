@@ -56,6 +56,19 @@ class VCCFinanceDatabaseTest {
     }
 
     @Test
+    fun transferLegsAreInsertedAllOrNothing() = runTest {
+        db.accountDao().insert(account)
+        val outgoing = transaction("leg-out", externalId = null, source = TransactionSource.MANUAL).copy(transferGroupId = "grp-1")
+        // A conta de destino não existe: a segunda perna viola a chave estrangeira.
+        val incoming = outgoing.copy(id = "leg-in", accountId = "missing", type = TransactionType.INCOME)
+
+        val error = runCatching { db.transactionDao().insertAtomically(listOf(outgoing, incoming)) }.exceptionOrNull()
+
+        assertTrue(error is SQLiteConstraintException)
+        assertEquals(emptyList<TransactionEntity>(), db.transactionDao().getByTransferGroup("grp-1"))
+    }
+
+    @Test
     fun insertAllIgnoresRepeatedExternalIdPerAccountAndSource() = runTest {
         db.accountDao().insert(account)
 

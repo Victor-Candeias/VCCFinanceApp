@@ -678,6 +678,8 @@ Importar `collectAsStateWithLifecycle` de Lifecycle Compose; assegurar as depend
 
 **Implementação (S3-03):** Movimentos tem um botão para criar receita/despesa e tocar num movimento abre o editor (`TransactionEditorRoute(transactionId: String?)`), com conta, tipo, valor, descrição, data, categoria (filtrada pelo tipo, subcategorias como `Alimentação › Café`), estado pendente e notas; apagar pede confirmação. `SaveTransactionUseCase` valida conta ativa, valor positivo, descrição (máx. 140), categoria compatível com o tipo e usa sempre a moeda da conta; rejeita `TRANSFER` e pernas de transferência (tratadas em conjunto no S3-04). Datas escolhidas sem hora ficam ao meio-dia local, para não mudarem de dia com variações de fuso; ao editar sem mudar a data mantém-se o instante original. As categorias iniciais (§5) são semeadas no arranque por `SeedSystemCategoriesUseCase`, com IDs estáveis `system-*` e `INSERT … IGNORE`, sem sobrepor alterações do utilizador.
 
+**Implementação (S3-04):** uma transferência interna são dois movimentos com o mesmo `transferGroupId`: `EXPENSE` na conta de origem e `INCOME` na de destino, com o mesmo valor, moeda, data e estado. `SaveTransferUseCase` valida contas diferentes, ativas e na mesma moeda, valor positivo e descrição; as pernas são gravadas, editadas e apagadas numa única transação Room (`insertAtomically`/`updateAtomically`/`deleteTransferGroup`). As pernas contam para o saldo de cada conta e ficam fora dos totais de receitas/despesas (`Transaction.isInternalTransfer`). Em Movimentos, o botão de adicionar abre um menu (receita/despesa ou transferência); tocar numa perna abre `TransferEditorRoute(transferGroupId)` e a lista mostra "Transferência para/de <conta>".
+
 ## 10. Autenticação, PIN e biometria
 
 Componentes: `PinManager`, `BiometricAuthenticator`, `SessionManager` e `SecurityPreferences`.
@@ -886,3 +888,4 @@ A primeira milestone deve produzir um **projeto Android Studio compilável** com
 | 19/10/2026 | Todas as 12 tabelas de §5 entram na versão 1 do schema Room. |
 | 19/10/2026 | Matriz de versões fixada a partir do ambiente local (§4); Kotlin/KSP/Hilt a confirmar no primeiro build. |
 | 19/10/2026 | Matriz de versões confirmada com `assembleDebug` (S1-03), sem ajustes. |
+| 21/10/2026 | Transferências internas guardadas como duas pernas `EXPENSE`/`INCOME` ligadas por `transferGroupId` (sem usar `TransactionType.TRANSFER` nem migração); só entre contas da mesma moeda. |

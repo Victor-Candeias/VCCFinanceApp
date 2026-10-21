@@ -12,25 +12,20 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -45,15 +40,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import java.time.Instant
-import java.time.ZoneOffset
 import pt.vcc.financeapp.core.data.usecase.SaveTransactionUseCase
 import pt.vcc.financeapp.core.model.TransactionStatus
 import pt.vcc.financeapp.core.model.TransactionType
 import pt.vcc.financeapp.feature.finance.R
+import pt.vcc.financeapp.feature.finance.ui.DateField
 import pt.vcc.financeapp.feature.finance.ui.DropdownField
 import pt.vcc.financeapp.feature.finance.ui.LoadingState
-import pt.vcc.financeapp.feature.finance.ui.formatted
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -125,8 +118,6 @@ private fun TransactionForm(
     viewModel: TransactionEditorViewModel,
     modifier: Modifier = Modifier,
 ) {
-    var showDatePicker by rememberSaveable { mutableStateOf(false) }
-
     Column(
         modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -193,13 +184,7 @@ private fun TransactionForm(
             modifier = Modifier.fillMaxWidth(),
         )
 
-        Column {
-            Text(stringResource(R.string.transaction_field_date), style = MaterialTheme.typography.labelLarge)
-            OutlinedButton(onClick = { showDatePicker = true }, modifier = Modifier.fillMaxWidth()) {
-                Text(state.date.formatted(), Modifier.weight(1f))
-                Icon(Icons.Filled.DateRange, contentDescription = null)
-            }
-        }
+        DateField(stringResource(R.string.transaction_field_date), state.date, viewModel::onDateChange)
 
         val noCategory = stringResource(R.string.transaction_no_category)
         DropdownField(
@@ -237,31 +222,6 @@ private fun TransactionForm(
 
         Button(onClick = viewModel::save, enabled = !state.isSaving, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(R.string.action_save))
-        }
-    }
-
-    if (showDatePicker) {
-        // O DatePicker trabalha em milissegundos UTC à meia-noite.
-        val pickerState = rememberDatePickerState(
-            initialSelectedDateMillis = state.date.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
-        )
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        pickerState.selectedDateMillis?.let {
-                            viewModel.onDateChange(Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate())
-                        }
-                        showDatePicker = false
-                    },
-                ) { Text(stringResource(R.string.action_ok)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.action_cancel)) }
-            },
-        ) {
-            DatePicker(state = pickerState)
         }
     }
 }

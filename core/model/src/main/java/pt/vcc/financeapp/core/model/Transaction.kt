@@ -26,5 +26,10 @@ data class Transaction(
         require(!amount.isNegative) { "O montante de um movimento não pode ser negativo" }
     }
 
-    val isInternalTransfer: Boolean get() = type == TransactionType.TRANSFER
+    /**
+     * Perna de uma transferência entre contas próprias: guardada como EXPENSE na origem e INCOME no
+     * destino (contam para o saldo de cada conta) mas excluída de receitas/despesas globais.
+     * `TRANSFER` fica reservado a movimentos externos sem perna correspondente.
+     */
+    val isInternalTransfer: Boolean get() = transferGroupId != null || type == TransactionType.TRANSFER
 }

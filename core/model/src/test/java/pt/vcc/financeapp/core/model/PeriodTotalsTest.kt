@@ -10,6 +10,7 @@ class PeriodTotalsTest {
         amountMinor: Long,
         currency: String = "EUR",
         status: TransactionStatus = TransactionStatus.BOOKED,
+        transferGroupId: String? = null,
     ) = Transaction(
         id = "tx-$type-$amountMinor-$currency-$status",
         accountId = "acc-1",
@@ -19,6 +20,7 @@ class PeriodTotalsTest {
         bookingDate = Instant.EPOCH,
         source = TransactionSource.MANUAL,
         status = status,
+        transferGroupId = transferGroupId,
         createdAt = Instant.EPOCH,
         updatedAt = Instant.EPOCH,
     )
@@ -51,6 +53,8 @@ class PeriodTotalsTest {
                 tx(TransactionType.EXPENSE, 2_000, status = TransactionStatus.PENDING),
                 tx(TransactionType.INCOME, 3_000, status = TransactionStatus.CANCELLED),
                 tx(TransactionType.TRANSFER, 5_000),
+                tx(TransactionType.EXPENSE, 7_000, transferGroupId = "grp-1"),
+                tx(TransactionType.INCOME, 7_000, transferGroupId = "grp-1"),
             ),
         )
 

@@ -103,4 +103,21 @@
     <string name="transaction_error_category">A categoria não corresponde ao tipo de movimento.</string>
     <string name="transaction_delete_title">Apagar movimento?</string>
     <string name="transaction_delete_message">O movimento é removido definitivamente e o saldo da conta é recalculado.</string>
+    <string name="transaction_add_income_expense">Receita ou despesa</string>
+    <string name="transaction_add_transfer">Transferência entre contas</string>
+    <string name="transaction_transfer_to">Transferência para %1$s</string>
+    <string name="transaction_transfer_from">Transferência de %1$s</string>
+
+    <string name="transfer_editor_new_title">Nova transferência</string>
+    <string name="transfer_editor_edit_title">Editar transferência</string>
+    <string name="transfer_editor_not_found">A transferência já não existe.</string>
+    <string name="transfer_editor_need_two_accounts">Precisas de pelo menos duas contas ativas para fazer uma transferência.</string>
+    <string name="transfer_field_from">Conta de origem</string>
+    <string name="transfer_field_to">Conta de destino</string>
+    <string name="transfer_swap_accounts">Trocar origem e destino</string>
+    <string name="transfer_error_same_account">A conta de destino tem de ser diferente da conta de origem.</string>
+    <string name="transfer_error_currency">As duas contas têm de ter a mesma moeda.</string>
+    <string name="transfer_hint_totals">As transferências alteram o saldo das duas contas, mas não contam como receita nem como despesa.</string>
+    <string name="transfer_delete_title">Apagar transferência?</string>
+    <string name="transfer_delete_message">As duas pernas da transferência são removidas e os saldos das contas são recalculados.</string>
 </resources>
