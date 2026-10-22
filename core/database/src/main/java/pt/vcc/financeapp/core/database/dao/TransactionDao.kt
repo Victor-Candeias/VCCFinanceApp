@@ -32,6 +32,15 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE transferGroupId = :transferGroupId")
     suspend fun getByTransferGroup(transferGroupId: String): List<TransactionEntity>
 
+    /** Movimentos de uma conta com `bookingDate` em `[fromInclusive, toExclusive)` (deteção de duplicados na importação). */
+    @Query(
+        """
+        SELECT * FROM transactions
+        WHERE accountId = :accountId AND bookingDate >= :fromInclusive AND bookingDate < :toExclusive
+        """,
+    )
+    suspend fun getByAccountInPeriod(accountId: String, fromInclusive: Long, toExclusive: Long): List<TransactionEntity>
+
     @Query("SELECT COUNT(*) FROM transactions WHERE accountId = :accountId")
     suspend fun countByAccount(accountId: String): Int
 

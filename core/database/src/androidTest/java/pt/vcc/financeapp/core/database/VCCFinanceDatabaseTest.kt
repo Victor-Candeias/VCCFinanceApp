@@ -16,8 +16,11 @@ import org.junit.runner.RunWith
 import pt.vcc.financeapp.core.database.dao.BalanceMovementRow
 import pt.vcc.financeapp.core.database.entity.AccountEntity
 import pt.vcc.financeapp.core.database.entity.CategoryEntity
+import pt.vcc.financeapp.core.database.entity.ImportBatchEntity
 import pt.vcc.financeapp.core.database.entity.TransactionEntity
 import pt.vcc.financeapp.core.model.AccountType
+import pt.vcc.financeapp.core.model.ImportFormat
+import pt.vcc.financeapp.core.model.ImportStatus
 import pt.vcc.financeapp.core.model.TransactionSource
 import pt.vcc.financeapp.core.model.TransactionStatus
 import pt.vcc.financeapp.core.model.TransactionType
@@ -50,6 +53,58 @@ class VCCFinanceDatabaseTest {
             source = source,
             externalId = externalId,
         )
+
+    @Test
+    fun importBatchIsSavedWithItsTransactionsAndRepeatedExternalIdsAreSkipped() = runTest {
+        db.accountDao().insert(account)
+        db.transactionDao().insert(transaction("old", externalId = "h:1"))
+        val batch = ImportBatchEntity(
+            id = "batch-1",
+            accountId = account.id,
+            format = ImportFormat.CSV,
+            fileName = "extrato.csv",
+            fileSha256 = "sha",
+            status = ImportStatus.COMPLETED,
+            totalRows = 2,
+            importedRows = 2,
+        )
+
+        val inserted = db.importBatchDao().insertWithTransactions(
+            batch,
+            listOf(transaction("new-1", "h:1").copy(importBatchId = "batch-1"), transaction("new-2", "h:2").copy(importBatchId = "batch-1")),
+        )
+
+        assertEquals(1, inserted)
+        val saved = db.importBatchDao().getById("batch-1")!!
+        assertEquals(1, saved.importedRows)
+        assertEquals(1, saved.duplicateRows)
+        assertEquals(listOf(saved), db.importBatchDao().findCompletedByFile(account.id, "sha"))
+        assertEquals(
+            setOf("old", "new-2"),
+            db.transactionDao().getByAccountInPeriod(account.id, 0, Long.MAX_VALUE).map { it.id }.toSet(),
+        )
+    }
+
+    @Test
+    fun importBatchIsRolledBackWhenATransactionFails() = runTest {
+        db.accountDao().insert(account)
+        val batch = ImportBatchEntity(
+            id = "batch-2",
+            accountId = account.id,
+            format = ImportFormat.XLSX,
+            fileName = "extrato.xlsx",
+            fileSha256 = "sha2",
+            status = ImportStatus.COMPLETED,
+        )
+        // Conta inexistente: a chave estrangeira falha e nada pode ficar gravado.
+        val broken = transaction("bad", "h:3").copy(accountId = "missing", importBatchId = "batch-2")
+
+        val error = runCatching { db.importBatchDao().insertWithTransactions(batch, listOf(transaction("ok", "h:4"), broken)) }.exceptionOrNull()
+
+        assertTrue(error is SQLiteConstraintException)
+        assertEquals(null, db.importBatchDao().getById("batch-2"))
+        assertEquals(0, db.transactionDao().countByAccount(account.id))
+    }
 
     @Test
     fun foreignKeysAreEnforced() = runTest {

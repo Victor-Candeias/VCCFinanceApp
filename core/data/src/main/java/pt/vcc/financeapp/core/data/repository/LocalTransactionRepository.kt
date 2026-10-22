@@ -31,6 +31,9 @@ internal class LocalTransactionRepository @Inject constructor(
 
     override suspend fun countByAccount(accountId: String): Int = dao.countByAccount(accountId)
 
+    override suspend fun getByAccountInPeriod(accountId: String, fromInclusive: Instant, toExclusive: Instant): List<Transaction> =
+        dao.getByAccountInPeriod(accountId, fromInclusive.toEpochMilli(), toExclusive.toEpochMilli()).map(TransactionEntity::asDomain)
+
     override suspend fun create(transaction: Transaction) = dao.insert(transaction.asEntity())
 
     override suspend fun update(transaction: Transaction) = dao.update(transaction.asEntity())

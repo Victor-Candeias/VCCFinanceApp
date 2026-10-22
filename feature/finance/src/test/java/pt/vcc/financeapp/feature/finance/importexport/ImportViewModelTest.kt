@@ -2,6 +2,7 @@ package pt.vcc.financeapp.feature.finance.importexport
 
 import java.time.Clock
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneOffset
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -11,17 +12,30 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import pt.vcc.financeapp.core.data.importer.CandidateStatus
+import pt.vcc.financeapp.core.data.importer.CommitImportUseCase
 import pt.vcc.financeapp.core.data.importer.DocumentReader
 import pt.vcc.financeapp.core.data.importer.ImportDocument
 import pt.vcc.financeapp.core.data.importer.ImportParseException
 import pt.vcc.financeapp.core.data.importer.ReadImportFileUseCase
+import pt.vcc.financeapp.core.data.importer.ReviewImportUseCase
+import pt.vcc.financeapp.core.data.testing.FakeAccountRepository
+import pt.vcc.financeapp.core.data.testing.FakeImportBatchRepository
 import pt.vcc.financeapp.core.data.testing.FakeImportProfileRepository
+import pt.vcc.financeapp.core.data.testing.FakeTransactionRepository
+import pt.vcc.financeapp.core.model.Account
+import pt.vcc.financeapp.core.model.AccountType
 import pt.vcc.financeapp.core.model.ColumnMapping
 import pt.vcc.financeapp.core.model.ImportFormat
+import pt.vcc.financeapp.core.model.Money
+import pt.vcc.financeapp.core.model.Transaction
+import pt.vcc.financeapp.core.model.TransactionSource
+import pt.vcc.financeapp.core.model.TransactionType
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ImportViewModelTest {
@@ -33,7 +47,20 @@ class ImportViewModelTest {
     }
     private val profiles = FakeImportProfileRepository()
     private val clock = Clock.fixed(Instant.parse("2026-10-21T10:00:00Z"), ZoneOffset.UTC)
-    private val viewModel by lazy { ImportViewModel(ReadImportFileUseCase(reader, dispatcher), profiles, clock, dispatcher) }
+    private val accounts = FakeAccountRepository()
+    private val transactions = FakeTransactionRepository()
+    private val batches = FakeImportBatchRepository(transactions)
+    private val viewModel by lazy {
+        ImportViewModel(
+            ReadImportFileUseCase(reader, dispatcher),
+            profiles,
+            accounts,
+            ReviewImportUseCase(transactions, batches, clock, dispatcher),
+            CommitImportUseCase(accounts, batches, clock),
+            clock,
+            dispatcher,
+        )
+    }
 
     @Before
     fun setUp() = Dispatchers.setMain(dispatcher)
@@ -115,5 +142,53 @@ class ImportViewModelTest {
 
         viewModel.updateMapping { it.copy(descriptionColumn = null) }
         assertEquals(0, viewModel.uiState.value.parsedRows.size)
+    }
+
+    @Test
+    fun reviewsAndImportsOnlySelectedRowsIntoTheAccount() {
+        val account = Account("cgd", "CGD", AccountType.BANK_ACCOUNT, Money(0, "EUR"), createdAt = clock.instant())
+        accounts.accounts.value = listOf(account)
+        val manual = Transaction(
+            id = "manual",
+            accountId = account.id,
+            type = TransactionType.EXPENSE,
+            amount = Money(150, "EUR"),
+            description = "Café da manhã",
+            bookingDate = LocalDate.parse("2026-01-02").atTime(12, 0).toInstant(ZoneOffset.UTC),
+            source = TransactionSource.MANUAL,
+            createdAt = clock.instant(),
+            updatedAt = clock.instant(),
+        )
+        transactions.transactions.value = listOf(manual)
+        val csv = "Data Mov.;Descritivo;Débito;Crédito\n02/01/2026;Café;1,50;\n03/01/2026;Salário;;2.000,00\n".toByteArray()
+        documents["content://cgd"] = ImportDocument("extrato_cgd.csv", csv)
+
+        viewModel.onFileSelected("content://cgd")
+        assertEquals(account.id, viewModel.uiState.value.accountId)
+        viewModel.review()
+        var state = viewModel.uiState.value
+        assertEquals(ImportStep.REVIEW, state.step)
+        assertEquals(listOf(CandidateStatus.POSSIBLE_DUPLICATE, CandidateStatus.NEW), state.review?.candidates?.map { it.status })
+        assertEquals(setOf(2), state.selectedRows)
+
+        viewModel.toggleRow(1)
+        viewModel.toggleRow(1)
+        viewModel.confirmImport()
+        state = viewModel.uiState.value
+        assertEquals(ImportStep.DONE, state.step)
+        assertEquals(1, state.result?.importedRows)
+        assertEquals(1, state.result?.duplicateRows)
+        val imported = transactions.transactions.value.single { it.id != manual.id }
+        assertEquals(TransactionType.INCOME, imported.type)
+        assertEquals(Money(200_000, "EUR"), imported.amount)
+        assertEquals(state.result?.id, imported.importBatchId)
+
+        // O mesmo ficheiro outra vez: aviso e a linha importada aparece como duplicada.
+        viewModel.onFileSelected("content://cgd")
+        viewModel.review()
+        state = viewModel.uiState.value
+        assertNotNull(state.review?.previousImport)
+        assertEquals(listOf(CandidateStatus.POSSIBLE_DUPLICATE, CandidateStatus.DUPLICATE), state.review?.candidates?.map { it.status })
+        assertTrue(state.selectedRows.isEmpty())
     }
 }

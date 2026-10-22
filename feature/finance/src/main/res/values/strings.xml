@@ -265,4 +265,43 @@
     <string name="import_profile_save">Guardar perfil</string>
     <string name="import_profiles_title">Perfis guardados</string>
     <string name="import_profile_delete">Apagar o perfil %1$s</string>
+    <string name="import_account_label">Conta de destino</string>
+    <string name="import_account_none">Escolher conta</string>
+    <string name="import_account_required">Escolha a conta onde os movimentos vão ser registados.</string>
+    <string name="import_no_accounts">Crie primeiro uma conta para poder importar movimentos.</string>
+    <string name="import_review_action">Rever movimentos</string>
+    <string name="import_review_title">Revisão da importação</string>
+    <string name="import_review_previous">Este ficheiro já foi importado nesta conta em %1$s. As linhas repetidas aparecem como já importadas.</string>
+    <string name="import_review_hint">Os possíveis duplicados ficam por importar até os marcar.</string>
+    <string name="import_review_back">Voltar ao mapeamento</string>
+    <string name="import_status_duplicate">Já importado</string>
+    <string name="import_status_possible">Semelhante a «%1$s» de %2$s</string>
+    <string name="import_commit_failed">Não foi possível gravar a importação. Nenhum movimento foi gravado.</string>
+    <string name="import_done_title">Importação concluída</string>
+    <string name="import_done_another">Importar outro extrato</string>
+    <string name="import_done_close">Concluir</string>
+    <plurals name="import_review_new">
+        <item quantity="one">%d movimento novo</item>
+        <item quantity="other">%d movimentos novos</item>
+    </plurals>
+    <plurals name="import_review_duplicates">
+        <item quantity="one">%d já importado (ignorado)</item>
+        <item quantity="other">%d já importados (ignorados)</item>
+    </plurals>
+    <plurals name="import_review_possible">
+        <item quantity="one">%d possível duplicado</item>
+        <item quantity="other">%d possíveis duplicados</item>
+    </plurals>
+    <plurals name="import_review_confirm">
+        <item quantity="one">Importar %d movimento</item>
+        <item quantity="other">Importar %d movimentos</item>
+    </plurals>
+    <plurals name="import_done_imported">
+        <item quantity="one">%d movimento importado</item>
+        <item quantity="other">%d movimentos importados</item>
+    </plurals>
+    <plurals name="import_done_skipped">
+        <item quantity="one">%d duplicado ignorado</item>
+        <item quantity="other">%d duplicados ignorados</item>
+    </plurals>
 </resources>

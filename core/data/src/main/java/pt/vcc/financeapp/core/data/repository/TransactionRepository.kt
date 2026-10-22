@@ -16,6 +16,9 @@ interface TransactionRepository {
 
     suspend fun getById(id: String): Transaction?
     suspend fun countByAccount(accountId: String): Int
+
+    /** Movimentos de uma conta com `bookingDate` em `[fromInclusive, toExclusive)`. */
+    suspend fun getByAccountInPeriod(accountId: String, fromInclusive: Instant, toExclusive: Instant): List<Transaction>
     suspend fun create(transaction: Transaction)
     suspend fun update(transaction: Transaction)
     suspend fun delete(transaction: Transaction)

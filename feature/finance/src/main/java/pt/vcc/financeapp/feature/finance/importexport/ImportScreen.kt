@@ -52,6 +52,7 @@ fun ImportScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val profiles by viewModel.profiles.collectAsStateWithLifecycle()
+    val accounts by viewModel.accounts.collectAsStateWithLifecycle()
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) viewModel.onFileSelected(uri.toString())
     }
@@ -70,6 +71,23 @@ fun ImportScreen(
             )
         },
     ) { padding ->
+        val review = state.review
+        if (state.step == ImportStep.REVIEW && review != null) {
+            ImportReviewContent(
+                review = review,
+                currency = accounts.firstOrNull { it.id == state.accountId }?.currency ?: DEFAULT_CURRENCY,
+                selectedRows = state.selectedRows,
+                isWorking = state.isWorking,
+                commitFailed = state.commitFailed,
+                onToggle = viewModel::toggleRow,
+                onBack = viewModel::backToMapping,
+                onConfirm = viewModel::confirmImport,
+                modifier = Modifier
+                    .padding(padding)
+                    .fillMaxSize(),
+            )
+            return@Scaffold
+        }
         Column(
             modifier = Modifier
                 .padding(padding)
@@ -78,6 +96,11 @@ fun ImportScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            val result = state.result
+            if (state.step == ImportStep.DONE && result != null) {
+                ImportDoneCard(result, onAnother = viewModel::clear, onClose = onBack)
+                return@Column
+            }
             Text(stringResource(R.string.import_intro), style = MaterialTheme.typography.bodyMedium)
             Button(
                 onClick = { picker.launch(ImportViewModel.MIME_TYPES) },
@@ -103,6 +126,7 @@ fun ImportScreen(
                             color = MaterialTheme.colorScheme.primary,
                         )
                     }
+                    AccountSelector(accounts, state.accountId, viewModel::selectAccount)
                     if (mapping != null) {
                         ColumnMappingSection(
                             table = file.table,
@@ -114,6 +138,10 @@ fun ImportScreen(
                         )
                         if (mapping.isComplete) {
                             MappingResultCard(state.parsedRows, state.validRows, state.invalidRows)
+                            Button(onClick = viewModel::review, enabled = state.canReview, modifier = Modifier.fillMaxWidth()) {
+                                Text(stringResource(R.string.import_review_action))
+                            }
+                            if (state.isWorking) CircularProgressIndicator()
                         }
                         SaveProfileSection(
                             name = state.profileName,
@@ -195,6 +223,8 @@ private fun SavedProfiles(profiles: List<ImportProfile>, onDelete: (String) -> U
         )
     }
 }
+
+private const val DEFAULT_CURRENCY = "EUR"
 
 private fun Reason.messageRes(): Int = when (this) {
     Reason.EMPTY -> R.string.import_error_empty

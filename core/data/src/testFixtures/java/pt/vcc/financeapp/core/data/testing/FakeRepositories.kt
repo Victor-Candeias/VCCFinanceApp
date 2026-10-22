@@ -59,6 +59,8 @@ class FakeTransactionRepository(initial: List<Transaction> = emptyList()) : Tran
 
     override suspend fun getById(id: String): Transaction? = transactions.value.find { it.id == id }
     override suspend fun countByAccount(accountId: String): Int = transactions.value.count { it.accountId == accountId }
+    override suspend fun getByAccountInPeriod(accountId: String, fromInclusive: Instant, toExclusive: Instant): List<Transaction> =
+        transactions.value.filter { it.accountId == accountId && it.bookingDate >= fromInclusive && it.bookingDate < toExclusive }
     override suspend fun create(transaction: Transaction) = transactions.update { it + transaction }
     override suspend fun update(transaction: Transaction) =
         transactions.update { list -> list.map { if (it.id == transaction.id) transaction else it } }

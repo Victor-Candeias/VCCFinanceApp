@@ -8,9 +8,11 @@ import pt.vcc.financeapp.core.data.importer.ContentResolverDocumentReader
 import pt.vcc.financeapp.core.data.importer.DocumentReader
 import pt.vcc.financeapp.core.data.repository.AccountRepository
 import pt.vcc.financeapp.core.data.repository.CategoryRepository
+import pt.vcc.financeapp.core.data.repository.ImportBatchRepository
 import pt.vcc.financeapp.core.data.repository.ImportProfileRepository
 import pt.vcc.financeapp.core.data.repository.LocalAccountRepository
 import pt.vcc.financeapp.core.data.repository.LocalCategoryRepository
+import pt.vcc.financeapp.core.data.repository.LocalImportBatchRepository
 import pt.vcc.financeapp.core.data.repository.LocalImportProfileRepository
 import pt.vcc.financeapp.core.data.repository.LocalTransactionRepository
 import pt.vcc.financeapp.core.data.repository.TransactionRepository
@@ -29,6 +31,9 @@ internal abstract class RepositoryModule {
 
     @Binds
     abstract fun bindDocumentReader(implementation: ContentResolverDocumentReader): DocumentReader
+
+    @Binds
+    abstract fun bindImportBatchRepository(implementation: LocalImportBatchRepository): ImportBatchRepository
 
     @Binds
     abstract fun bindImportProfileRepository(implementation: LocalImportProfileRepository): ImportProfileRepository

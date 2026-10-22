@@ -14,20 +14,32 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import pt.vcc.financeapp.core.data.importer.CandidateStatus
 import pt.vcc.financeapp.core.data.importer.ColumnMappingDetector
+import pt.vcc.financeapp.core.data.importer.CommitImportUseCase
+import pt.vcc.financeapp.core.data.importer.ImportCommitRequest
 import pt.vcc.financeapp.core.data.importer.ImportFile
 import pt.vcc.financeapp.core.data.importer.ImportParseException
 import pt.vcc.financeapp.core.data.importer.ImportRowParser
 import pt.vcc.financeapp.core.data.importer.ImportTable
 import pt.vcc.financeapp.core.data.importer.ParsedImportRow
+import pt.vcc.financeapp.core.data.importer.ImportReview
 import pt.vcc.financeapp.core.data.importer.ReadImportFileUseCase
+import pt.vcc.financeapp.core.data.importer.ReviewImportUseCase
+import pt.vcc.financeapp.core.data.repository.AccountRepository
 import pt.vcc.financeapp.core.data.repository.ImportProfileRepository
+import pt.vcc.financeapp.core.model.Account
 import pt.vcc.financeapp.core.model.ColumnMapping
+import pt.vcc.financeapp.core.model.ImportBatch
 import pt.vcc.financeapp.core.model.ImportProfile
+import pt.vcc.financeapp.core.model.currencyFractionDigits
+
+enum class ImportStep { MAPPING, REVIEW, DONE }
 
 data class ImportUiState(
     val isReading: Boolean = false,
@@ -41,16 +53,30 @@ data class ImportUiState(
     val profileAutoApplied: Boolean = false,
     val profileName: String = "",
     val profileSaved: Boolean = false,
+    /** Conta de destino; define também as casas decimais usadas para ler os valores. */
+    val accountId: String? = null,
+    val isParsing: Boolean = false,
+    val step: ImportStep = ImportStep.MAPPING,
+    val review: ImportReview? = null,
+    /** `rowIndex` das linhas a importar. */
+    val selectedRows: Set<Int> = emptySet(),
+    val isWorking: Boolean = false,
+    val commitFailed: Boolean = false,
+    val result: ImportBatch? = null,
 ) {
     val validRows: Int get() = parsedRows.count { it.isValid }
     val invalidRows: Int get() = parsedRows.size - validRows
+    val canReview: Boolean get() = accountId != null && !isParsing && !isWorking && validRows > 0
 }
 
-/** Leitura do extrato, mapeamento das colunas e perfis por banco. */
+/** Leitura do extrato, mapeamento das colunas, perfis por banco, revisão de duplicados e gravação. */
 @HiltViewModel
 class ImportViewModel internal constructor(
     private val readImportFile: ReadImportFileUseCase,
     private val profileRepository: ImportProfileRepository,
+    private val accountRepository: AccountRepository,
+    private val reviewImport: ReviewImportUseCase,
+    private val commitImport: CommitImportUseCase,
     private val clock: Clock,
     private val computeDispatcher: CoroutineDispatcher,
 ) : ViewModel() {
@@ -58,12 +84,17 @@ class ImportViewModel internal constructor(
     constructor(
         readImportFile: ReadImportFileUseCase,
         profileRepository: ImportProfileRepository,
+        accountRepository: AccountRepository,
+        reviewImport: ReviewImportUseCase,
+        commitImport: CommitImportUseCase,
         clock: Clock,
-    ) : this(readImportFile, profileRepository, clock, Dispatchers.Default)
+    ) : this(readImportFile, profileRepository, accountRepository, reviewImport, commitImport, clock, Dispatchers.Default)
 
     private val _uiState = MutableStateFlow(ImportUiState())
     val uiState: StateFlow<ImportUiState> = _uiState.asStateFlow()
     val profiles: StateFlow<List<ImportProfile>> = profileRepository.observeAll()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val accounts: StateFlow<List<Account>> = accountRepository.observeActiveAccounts()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     private var readJob: Job? = null
     private var parseJob: Job? = null
@@ -71,10 +102,13 @@ class ImportViewModel internal constructor(
     fun onFileSelected(uri: String) {
         readJob?.cancel()
         parseJob?.cancel()
+        val previousAccount = _uiState.value.accountId
         _uiState.value = ImportUiState(isReading = true)
         readJob = viewModelScope.launch {
             val result = try {
                 val file = readImportFile(uri)
+                val active = accountRepository.observeActiveAccounts().first()
+                val accountId = previousAccount?.takeIf { id -> active.any { it.id == id } } ?: active.singleOrNull()?.id
                 val saved = findProfile(file.table)
                 val mapping = saved?.mapping ?: withContext(computeDispatcher) { ColumnMappingDetector.detect(file.table) }
                 ImportUiState(
@@ -83,6 +117,7 @@ class ImportViewModel internal constructor(
                     profile = saved,
                     profileAutoApplied = saved != null,
                     profileName = saved?.name ?: defaultProfileName(file.fileName),
+                    accountId = accountId,
                 )
             } catch (e: CancellationException) {
                 throw e
@@ -156,6 +191,77 @@ class ImportViewModel internal constructor(
         }
     }
 
+    fun selectAccount(id: String) {
+        if (_uiState.value.accountId == id) return
+        _uiState.update { it.copy(accountId = id) }
+        reparse()
+    }
+
+    /** Classifica as linhas válidas contra os movimentos da conta e passa à revisão. */
+    fun review() {
+        val state = _uiState.value
+        val file = state.file ?: return
+        val accountId = state.accountId ?: return
+        if (!state.canReview) return
+        _uiState.update { it.copy(isWorking = true) }
+        viewModelScope.launch {
+            val review = reviewImport(accountId, file.sha256, state.parsedRows)
+            _uiState.update {
+                it.copy(
+                    isWorking = false,
+                    step = ImportStep.REVIEW,
+                    review = review,
+                    selectedRows = review.candidates.filter { c -> c.status == CandidateStatus.NEW }.map { c -> c.row.rowIndex }.toSet(),
+                    commitFailed = false,
+                )
+            }
+        }
+    }
+
+    fun toggleRow(rowIndex: Int) {
+        val candidate = _uiState.value.review?.candidates?.firstOrNull { it.row.rowIndex == rowIndex } ?: return
+        if (!candidate.isSelectable) return
+        _uiState.update { state ->
+            val selected = if (rowIndex in state.selectedRows) state.selectedRows - rowIndex else state.selectedRows + rowIndex
+            state.copy(selectedRows = selected)
+        }
+    }
+
+    fun backToMapping() {
+        _uiState.update { it.copy(step = ImportStep.MAPPING, review = null, selectedRows = emptySet(), commitFailed = false) }
+    }
+
+    /** Grava o lote e os movimentos escolhidos numa única transação. */
+    fun confirmImport() {
+        val state = _uiState.value
+        val file = state.file ?: return
+        val accountId = state.accountId ?: return
+        val review = state.review ?: return
+        if (state.isWorking || state.step != ImportStep.REVIEW || state.selectedRows.isEmpty()) return
+        _uiState.update { it.copy(isWorking = true, commitFailed = false) }
+        viewModelScope.launch {
+            val request = ImportCommitRequest(
+                accountId = accountId,
+                fileName = file.fileName,
+                format = file.format,
+                fileSha256 = file.sha256,
+                profileName = state.profile?.takeIf { it.mapping == state.mapping }?.name,
+                candidates = review.candidates,
+                selectedRows = state.selectedRows,
+            )
+            val batch = try {
+                commitImport(request)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                null
+            }
+            _uiState.update {
+                if (batch == null) it.copy(isWorking = false, commitFailed = true) else it.copy(isWorking = false, step = ImportStep.DONE, result = batch)
+            }
+        }
+    }
+
     fun clear() {
         readJob?.cancel()
         parseJob?.cancel()
@@ -178,12 +284,17 @@ class ImportViewModel internal constructor(
         val table = state.file?.table
         val mapping = state.mapping
         if (table == null || mapping == null || !mapping.isComplete) {
-            _uiState.update { it.copy(parsedRows = emptyList()) }
+            _uiState.update { it.copy(parsedRows = emptyList(), isParsing = false) }
             return
         }
+        val accountId = state.accountId
+        _uiState.update { it.copy(isParsing = true) }
         parseJob = viewModelScope.launch {
-            val rows = withContext(computeDispatcher) { ImportRowParser.parse(table, mapping) }
-            _uiState.update { if (it.mapping == mapping) it.copy(parsedRows = rows) else it }
+            val digits = accountId?.let { accountRepository.getById(it) }?.currency?.let(::currencyFractionDigits) ?: DEFAULT_FRACTION_DIGITS
+            val rows = withContext(computeDispatcher) { ImportRowParser.parse(table, mapping, digits) }
+            _uiState.update {
+                if (it.mapping == mapping && it.accountId == accountId) it.copy(parsedRows = rows, isParsing = false) else it
+            }
         }
     }
 
@@ -209,5 +320,6 @@ class ImportViewModel internal constructor(
         const val PREVIEW_ROWS = 20
         const val HEADER_SEARCH_ROWS = 15
         const val MAX_PROFILE_NAME = 40
+        private const val DEFAULT_FRACTION_DIGITS = 2
     }
 }

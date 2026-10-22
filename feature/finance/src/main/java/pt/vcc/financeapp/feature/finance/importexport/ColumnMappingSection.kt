@@ -248,10 +248,3 @@ private fun signedAmount(row: ParsedImportRow): String {
         maximumFractionDigits = 2
     }.format(value)
 }
-
-private fun RowError.messageRes(): Int = when (this) {
-    RowError.INVALID_DATE -> R.string.import_row_error_date
-    RowError.MISSING_DESCRIPTION -> R.string.import_row_error_description
-    RowError.INVALID_AMOUNT -> R.string.import_row_error_amount
-    RowError.ZERO_AMOUNT -> R.string.import_row_error_zero
-}
