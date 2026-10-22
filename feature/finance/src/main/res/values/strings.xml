@@ -382,4 +382,29 @@
     <string name="budget_delete_title">Apagar orçamento?</string>
     <string name="budget_delete_message">O orçamento deixa de aparecer e de gerar alertas. Os movimentos não são alterados.</string>
     <string name="dashboard_budget_alerts">Alertas de orçamento</string>
+    <string name="export_title">Exportar dados</string>
+    <string name="export_format">Formato</string>
+    <string name="export_format_csv">CSV</string>
+    <string name="export_format_csv_description">Lista de movimentos separada por ponto e vírgula, para outras aplicações.</string>
+    <string name="export_format_xlsx">Excel (XLSX)</string>
+    <string name="export_format_xlsx_description">Folhas Movimentos, Contas, Categorias e Resumo.</string>
+    <string name="export_format_pdf">PDF</string>
+    <string name="export_format_pdf_description">Relatório com resumo, gráfico por categoria e lista de movimentos.</string>
+    <string name="export_format_json">JSON</string>
+    <string name="export_format_json_description">Dados estruturados com identificadores e valores em cêntimos.</string>
+    <string name="export_period">Período</string>
+    <string name="export_scope_all">Tudo</string>
+    <string name="export_scope_all_label">Todos os movimentos</string>
+    <plurals name="export_transaction_count">
+        <item quantity="one">%1$d movimento no período.</item>
+        <item quantity="other">%1$d movimentos no período.</item>
+    </plurals>
+    <string name="export_warning">O ficheiro exportado não é encriptado e inclui descrições, montantes e notas. Guarda-o num local seguro e apaga-o quando já não for preciso. O IBAN das contas nunca é exportado.</string>
+    <string name="export_action">Exportar</string>
+    <string name="export_in_progress">A exportar…</string>
+    <plurals name="export_success">
+        <item quantity="one">Exportado %1$d movimento.</item>
+        <item quantity="other">Exportados %1$d movimentos.</item>
+    </plurals>
+    <string name="export_failed">Não foi possível escrever o ficheiro. Tenta outro local.</string>
 </resources>

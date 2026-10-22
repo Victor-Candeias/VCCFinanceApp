@@ -39,6 +39,9 @@ data object ChangePinRoute
 data object ImportRoute
 
 @Serializable
+data object ExportRoute
+
+@Serializable
 data object BudgetsRoute
 
 /** Editor de orçamento; [budgetId] nulo cria um orçamento novo. */

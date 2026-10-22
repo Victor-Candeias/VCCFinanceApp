@@ -4,6 +4,10 @@ import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import pt.vcc.financeapp.core.data.exporter.AndroidPdfExporter
+import pt.vcc.financeapp.core.data.exporter.ContentResolverDocumentWriter
+import pt.vcc.financeapp.core.data.exporter.DocumentWriter
+import pt.vcc.financeapp.core.data.exporter.PdfExportWriter
 import pt.vcc.financeapp.core.data.importer.ContentResolverDocumentReader
 import pt.vcc.financeapp.core.data.importer.DocumentReader
 import pt.vcc.financeapp.core.data.repository.AccountRepository
@@ -33,6 +37,12 @@ internal abstract class RepositoryModule {
 
     @Binds
     abstract fun bindDocumentReader(implementation: ContentResolverDocumentReader): DocumentReader
+
+    @Binds
+    abstract fun bindDocumentWriter(implementation: ContentResolverDocumentWriter): DocumentWriter
+
+    @Binds
+    abstract fun bindPdfExportWriter(implementation: AndroidPdfExporter): PdfExportWriter
 
     @Binds
     abstract fun bindImportBatchRepository(implementation: LocalImportBatchRepository): ImportBatchRepository
