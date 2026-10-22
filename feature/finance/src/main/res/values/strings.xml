@@ -200,4 +200,27 @@
     <string name="reset_dialog_prompt">Escreve %1$s para confirmar</string>
     <string name="reset_dialog_confirm">Apagar tudo</string>
     <string name="reset_dialog_failed">Não foi possível apagar os dados. Tenta novamente.</string>
+    <string name="import_title">Importar extratos</string>
+    <string name="import_intro">Escolha um extrato exportado pelo banco em CSV ou Excel (.xlsx). O ficheiro é lido apenas neste dispositivo.</string>
+    <string name="import_choose_file">Escolher ficheiro</string>
+    <string name="import_choose_other">Escolher outro ficheiro</string>
+    <string name="import_file_summary">%1$s · %2$s · %3$s</string>
+    <plurals name="import_rows">
+        <item quantity="one">%d linha</item>
+        <item quantity="other">%d linhas</item>
+    </plurals>
+    <plurals name="import_columns">
+        <item quantity="one">%d coluna</item>
+        <item quantity="other">%d colunas</item>
+    </plurals>
+    <plurals name="import_preview_title">
+        <item quantity="one">Pré-visualização (%1$d de %2$d linha)</item>
+        <item quantity="other">Pré-visualização (%1$d de %2$d linhas)</item>
+    </plurals>
+    <string name="import_error_empty">O ficheiro está vazio.</string>
+    <string name="import_error_too_large">O ficheiro é demasiado grande (máximo 10 MB).</string>
+    <string name="import_error_too_many_rows">O ficheiro tem demasiadas linhas (máximo 50 000).</string>
+    <string name="import_error_unsupported">Formato não suportado. Use CSV ou Excel .xlsx (o .xls antigo e ficheiros protegidos por palavra-passe não são suportados).</string>
+    <string name="import_error_invalid">Não foi possível ler o ficheiro Excel; pode estar danificado.</string>
+    <string name="import_error_read">Não foi possível abrir o ficheiro.</string>
 </resources>

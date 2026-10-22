@@ -10,6 +10,7 @@ import pt.vcc.financeapp.feature.finance.authentication.ChangePinScreen
 import pt.vcc.financeapp.feature.finance.authentication.SecuritySettingsScreen
 import pt.vcc.financeapp.feature.finance.accounts.AccountsScreen
 import pt.vcc.financeapp.feature.finance.dashboard.DashboardScreen
+import pt.vcc.financeapp.feature.finance.importexport.ImportScreen
 import pt.vcc.financeapp.feature.finance.reports.ReportsScreen
 import pt.vcc.financeapp.feature.finance.settings.SettingsEntry
 import pt.vcc.financeapp.feature.finance.settings.SettingsScreen
@@ -68,6 +69,9 @@ fun NavGraphBuilder.financeGraph(
     composable<ChangePinRoute> {
         ChangePinScreen(onBack = { navController.popBackStack() })
     }
+    composable<ImportRoute> {
+        ImportScreen(onBack = { navController.popBackStack() })
+    }
     composable<SettingsRoute> {
         SettingsScreen(
             appVersion = appVersion,
@@ -77,7 +81,11 @@ fun NavGraphBuilder.financeGraph(
                     stringResource(R.string.settings_security_description),
                     onClick = { navController.navigate(SecuritySettingsRoute) },
                 ),
-                SettingsEntry(stringResource(R.string.settings_import), stringResource(R.string.settings_import_description)),
+                SettingsEntry(
+                    stringResource(R.string.settings_import),
+                    stringResource(R.string.settings_import_description),
+                    onClick = { navController.navigate(ImportRoute) },
+                ),
                 SettingsEntry(stringResource(R.string.settings_export), stringResource(R.string.settings_export_description)),
                 SettingsEntry(stringResource(R.string.settings_backup), stringResource(R.string.settings_backup_description)),
             ),

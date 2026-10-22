@@ -4,6 +4,8 @@ import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import pt.vcc.financeapp.core.data.importer.ContentResolverDocumentReader
+import pt.vcc.financeapp.core.data.importer.DocumentReader
 import pt.vcc.financeapp.core.data.repository.AccountRepository
 import pt.vcc.financeapp.core.data.repository.CategoryRepository
 import pt.vcc.financeapp.core.data.repository.LocalAccountRepository
@@ -22,4 +24,7 @@ internal abstract class RepositoryModule {
 
     @Binds
     abstract fun bindCategoryRepository(implementation: LocalCategoryRepository): CategoryRepository
+
+    @Binds
+    abstract fun bindDocumentReader(implementation: ContentResolverDocumentReader): DocumentReader
 }

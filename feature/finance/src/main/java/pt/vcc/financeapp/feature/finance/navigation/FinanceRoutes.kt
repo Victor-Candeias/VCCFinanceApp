@@ -34,3 +34,6 @@ data object SecuritySettingsRoute
 
 @Serializable
 data object ChangePinRoute
+
+@Serializable
+data object ImportRoute
