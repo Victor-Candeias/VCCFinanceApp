@@ -184,5 +184,9 @@
         <item quantity="one">%1$d minuto</item>
         <item quantity="other">%1$d minutos</item>
     </plurals>
-</resources>
+    <string name="account_field_iban">IBAN (opcional)</string>
+    <string name="account_iban_hint">Guardado cifrado neste dispositivo.</string>
+    <string name="account_iban_show">Mostrar</string>
+    <string name="account_error_invalid_iban">IBAN inválido. Confirma os caracteres.</string>
+    <string name="account_iban_unreadable">Não foi possível ler o IBAN guardado. Fica guardado enquanto não alterares este campo.</string></resources>
 

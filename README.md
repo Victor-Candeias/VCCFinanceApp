@@ -34,7 +34,7 @@ A **VCCFinanceApp** permite gerir contas bancárias, cartões de refeição, din
 | Arquitetura | Clean Architecture + MVVM, offline-first |
 | Navegação | Navigation Compose com rotas tipadas |
 | Injeção | Hilt |
-| Persistência | Room / SQLite |
+| Persistência | Room / SQLite cifrado com SQLCipher |
 | Preferências | DataStore (sem segredos em claro) |
 | Concorrência | Coroutines, Flow, StateFlow |
 | Segurança | BiometricPrompt, Android Keystore, AES-GCM, PIN com KDF robusta |
@@ -541,6 +541,8 @@ object DatabaseModule {
 
 Não usar `fallbackToDestructiveMigration()`. Exportar schemas Room, versionar migrations e executar testes de migração.
 
+**Encriptação em repouso (S4-04):** o `DatabaseModule` real usa `openHelperFactory(EncryptedOpenHelperFactory(...))`: a base de dados é aberta com SQLCipher (`net.zetetic:sqlcipher-android`) usando uma chave aleatória de 256 bits no formato raw. Uma base de dados em claro de versões anteriores é convertida uma única vez com `sqlcipher_export` (mantendo `user_version`) na primeira abertura, fora da main thread.
+
 **Schema e migrations (S2-04):** o plugin Gradle `androidx.room` exporta o schema para `core/database/schemas/` (versionado em git e exposto como asset do `androidTest`). Ao subir `VCCFinanceDatabase.VERSION`: compilar para gerar o novo `<versão>.json`, acrescentar a `Migration` a `VCCFinanceMigrations.ALL` (usado pelo `DatabaseModule`) e cobrir os dados migrados em `VCCFinanceMigrationTest`, que cria a base de dados na versão 1 com `MigrationTestHelper` e a abre com o Room atual — falha se faltar uma migration ou se o schema resultante divergir das entidades.
 
 ## 7. Repositórios e Use Cases
@@ -721,6 +723,8 @@ biometricPrompt.authenticate(promptInfo)
 
 **Implementação (S4-03):** `BiometricAuthenticator` usa `BiometricPrompt` (apenas `BIOMETRIC_STRONG`) com um `CryptoObject` sobre uma chave AES-GCM do Keystore com `setUserAuthenticationRequired(true)` e `setInvalidatedByBiometricEnrollment(true)`; o desbloqueio só conta se a cifra autenticada funcionar. Ativar em Mais → Segurança exige uma autenticação biométrica bem-sucedida; se a chave for invalidada (novas biometrias registadas), a opção é desativada e o utilizador entra com o PIN. O prompt aparece automaticamente no ecrã de desbloqueio, com botão "Usar PIN" e "Usar biometria" para o reabrir; fica indisponível durante o bloqueio por tentativas. `AutoLockController` aplica o bloqueio automático configurável (imediatamente, 30 s, 1, 5 ou 15 min; 1 min por omissão): ao voltar do segundo plano bloqueia se passou esse tempo (com "imediatamente" bloqueia logo ao sair) e em primeiro plano bloqueia após esse tempo sem interação (mínimo 30 s). A `MainActivity` passa a `FragmentActivity` e o estado da navegação é restaurado depois de desbloquear (`SaveableStateHolder`), sem manter os dados compostos por baixo do ecrã de bloqueio.
 
+**Implementação (S4-04):** solução de encriptação em repouso: SQLCipher para toda a base de dados (inclui `-wal`), com a chave de 32 bytes gerada por `SecureRandom`, embrulhada por AES-GCM com uma chave não exportável do Keystore (`DatabaseKeyProvider`) e guardada em `no_backup/database.key`; a chave nunca entra no texto SQL (parâmetros ligados), para não aparecer em registos de erro do SQLite. Campos sensíveis têm ainda cifra própria (`FieldCipher`, AES-GCM com outra chave do Keystore, formato `v1:<Base64>`): o IBAN da conta é opcional, validado (ISO 13616, mod 97), guardado em `ibanEncrypted` e mostrado mascarado (`PT50 •••• •••• 0154`) no editor até tocar em "Mostrar". `FLAG_SECURE` na `MainActivity` impede capturas de ecrã e esconde a app nas recentes. A política de bloqueio (tentativas, bloqueio automático e biometria) é a de S4-02/S4-03. Se a chave do Keystore se perder, a base de dados deixa de abrir (`DatabaseKeyUnavailableException`); a recuperação é tratada em S4-05.
+
 Fluxo: iniciar → verificar configuração de PIN → configurar ou desbloquear → biometria ou PIN → `Unlocked` → dashboard.
 
 ## 11. Importação de movimentos
@@ -900,3 +904,4 @@ A primeira milestone deve produzir um **projeto Android Studio compilável** com
 | 21/10/2026 | Verificador do PIN = HMAC (chave do Keystore) sobre PBKDF2-HMAC-SHA256 com 210 000 iterações; `SessionState` implementado como enum com `INITIALIZING` (estado antes de ler o DataStore) e `isPinConfigured` como `Flow`. |
 | 21/10/2026 | `verifyPin`/`changePin` devolvem `PinVerification` (sealed) em vez de `Boolean`, para a UI distinguir PIN errado (com tentativas restantes) de bloqueio temporário; bloqueio progressivo 5 tentativas → 30 s a duplicar até 1 h. |
 | 21/10/2026 | Um único tempo de bloqueio automático configurável para segundo plano e inatividade (em primeiro plano com mínimo de 30 s); a inatividade conta apenas toques na janela da activity (menus e diálogos são janelas próprias). Biometria só `BIOMETRIC_STRONG` com `CryptoObject`, indisponível durante o bloqueio por tentativas e sem repor o contador de tentativas do PIN; chave invalidada com novas biometrias desativa a opção. |
+| 21/10/2026 | Encriptação em repouso com SQLCipher em vez de depender só da FBE do Android (opcional em Android 8/9, `minSdk` 26): a base de dados inteira fica cifrada com uma chave aleatória protegida pelo Keystore, à custa de ~2 MB por ABI no APK. O IBAN tem também cifra de campo; `FLAG_SECURE` aplicado sempre, por ser uma app de dados financeiros. |

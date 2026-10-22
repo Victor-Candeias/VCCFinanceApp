@@ -19,9 +19,12 @@ import pt.vcc.financeapp.core.data.usecase.SaveAccountUseCase
 import pt.vcc.financeapp.core.model.AccountType
 import pt.vcc.financeapp.core.model.AmountParser
 import pt.vcc.financeapp.core.model.currencyFractionDigits
+import pt.vcc.financeapp.core.security.FieldCipher
 import pt.vcc.financeapp.feature.finance.ui.formatAmountInput
 
-enum class AccountEditorError { BLANK_NAME, NAME_TOO_LONG, INVALID_CURRENCY, CURRENCY_LOCKED, INVALID_AMOUNT, NOT_FOUND }
+enum class AccountEditorError {
+    BLANK_NAME, NAME_TOO_LONG, INVALID_CURRENCY, CURRENCY_LOCKED, INVALID_AMOUNT, INVALID_IBAN, NOT_FOUND
+}
 
 data class AccountEditorUiState(
     val isLoading: Boolean = true,
@@ -31,6 +34,12 @@ data class AccountEditorUiState(
     val institutionName: String = "",
     val currency: String = DEFAULT_CURRENCY,
     val openingBalance: String = "",
+    val iban: String = "",
+    /** O IBAN guardado aparece mascarado até o utilizador pedir para o ver. */
+    val isIbanRevealed: Boolean = true,
+    val isIbanChanged: Boolean = false,
+    /** Existe um IBAN guardado que não foi possível decifrar; mantém-se se o campo não for alterado. */
+    val isIbanUnreadable: Boolean = false,
     val isActive: Boolean = true,
     /** A moeda fica bloqueada quando a conta já tem movimentos. */
     val isCurrencyLocked: Boolean = false,
@@ -49,6 +58,7 @@ class AccountEditorViewModel @Inject constructor(
     private val accountRepository: AccountRepository,
     private val transactionRepository: TransactionRepository,
     private val saveAccount: SaveAccountUseCase,
+    private val fieldCipher: FieldCipher,
 ) : ViewModel() {
     private val accountId: String? = savedStateHandle.get<String>(ACCOUNT_ID_ARG)
 
@@ -66,6 +76,7 @@ class AccountEditorViewModel @Inject constructor(
             return@launch
         }
         val hasTransactions = transactionRepository.countByAccount(id) > 0
+        val iban = account.ibanEncrypted?.let(fieldCipher::decrypt)
         _uiState.value = AccountEditorUiState(
             isLoading = false,
             isNew = false,
@@ -74,6 +85,9 @@ class AccountEditorViewModel @Inject constructor(
             institutionName = account.institutionName.orEmpty(),
             currency = account.currency,
             openingBalance = formatAmountInput(account.openingBalance.amountMinor, currencyFractionDigits(account.currency)),
+            iban = iban.orEmpty(),
+            isIbanRevealed = iban == null,
+            isIbanUnreadable = account.ibanEncrypted != null && iban == null,
             isActive = account.isActive,
             isCurrencyLocked = hasTransactions,
         )
@@ -92,6 +106,17 @@ class AccountEditorViewModel @Inject constructor(
 
     fun onOpeningBalanceChange(value: String) =
         _uiState.update { it.copy(openingBalance = value, errors = it.errors - AccountEditorError.INVALID_AMOUNT) }
+
+    fun onIbanChange(value: String) = _uiState.update {
+        if (!it.isIbanRevealed) it
+        else it.copy(
+            iban = value.uppercase().filter { c -> c.isLetterOrDigit() || c == ' ' }.take(MAX_IBAN_INPUT),
+            isIbanChanged = true,
+            errors = it.errors - AccountEditorError.INVALID_IBAN,
+        )
+    }
+
+    fun revealIban() = _uiState.update { it.copy(isIbanRevealed = true) }
 
     fun save() {
         val state = _uiState.value
@@ -112,6 +137,7 @@ class AccountEditorViewModel @Inject constructor(
                     institutionName = state.institutionName,
                     currency = state.currency,
                     openingBalanceMinor = amount,
+                    iban = state.iban.takeIf { state.isIbanChanged },
                 ),
             )
             _uiState.update {
@@ -138,11 +164,13 @@ class AccountEditorViewModel @Inject constructor(
         AccountValidationError.NAME_TOO_LONG -> AccountEditorError.NAME_TOO_LONG
         AccountValidationError.INVALID_CURRENCY -> AccountEditorError.INVALID_CURRENCY
         AccountValidationError.CURRENCY_LOCKED -> AccountEditorError.CURRENCY_LOCKED
+        AccountValidationError.INVALID_IBAN -> AccountEditorError.INVALID_IBAN
         AccountValidationError.NOT_FOUND -> AccountEditorError.NOT_FOUND
     }
 
     companion object {
         const val ACCOUNT_ID_ARG = "accountId"
+        private const val MAX_IBAN_INPUT = 42
         private val NAME_ERRORS = setOf(AccountEditorError.BLANK_NAME, AccountEditorError.NAME_TOO_LONG)
     }
 }

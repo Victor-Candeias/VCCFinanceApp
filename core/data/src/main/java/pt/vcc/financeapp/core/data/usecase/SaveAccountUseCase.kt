@@ -7,7 +7,9 @@ import pt.vcc.financeapp.core.data.repository.AccountRepository
 import pt.vcc.financeapp.core.data.repository.TransactionRepository
 import pt.vcc.financeapp.core.model.Account
 import pt.vcc.financeapp.core.model.AccountType
+import pt.vcc.financeapp.core.model.Iban
 import pt.vcc.financeapp.core.model.Money
+import pt.vcc.financeapp.core.security.FieldCipher
 
 /** Dados de uma conta tal como introduzidos no formulário; [id] nulo cria uma conta nova. */
 data class AccountInput(
@@ -17,9 +19,12 @@ data class AccountInput(
     val institutionName: String?,
     val currency: String,
     val openingBalanceMinor: Long,
+    /** IBAN em claro; 
+ull mantém o atual e em branco remove-o. */
+    val iban: String? = null,
 )
 
-enum class AccountValidationError { BLANK_NAME, NAME_TOO_LONG, INVALID_CURRENCY, CURRENCY_LOCKED, NOT_FOUND }
+enum class AccountValidationError { BLANK_NAME, NAME_TOO_LONG, INVALID_CURRENCY, CURRENCY_LOCKED, INVALID_IBAN, NOT_FOUND }
 
 sealed interface SaveAccountResult {
     data class Saved(val account: Account) : SaveAccountResult
@@ -28,12 +33,13 @@ sealed interface SaveAccountResult {
 
 /**
  * Cria ou atualiza uma conta. A moeda de uma conta com movimentos não pode mudar, para nunca
- * misturar moedas no cálculo do saldo (README §1).
+ * misturar moedas no cálculo do saldo (README §1). O IBAN é guardado cifrado com [FieldCipher].
  */
 class SaveAccountUseCase @Inject constructor(
     private val accountRepository: AccountRepository,
     private val transactionRepository: TransactionRepository,
     private val clock: Clock,
+    private val fieldCipher: FieldCipher,
 ) {
     suspend operator fun invoke(input: AccountInput): SaveAccountResult {
         val name = input.name.trim()
@@ -42,6 +48,8 @@ class SaveAccountUseCase @Inject constructor(
         if (name.isEmpty()) errors += AccountValidationError.BLANK_NAME
         if (name.length > MAX_NAME_LENGTH) errors += AccountValidationError.NAME_TOO_LONG
         if (!CURRENCY_CODE.matches(currency)) errors += AccountValidationError.INVALID_CURRENCY
+        val iban = input.iban?.let(Iban::normalize)
+        if (!iban.isNullOrEmpty() && !Iban.isValid(iban)) errors += AccountValidationError.INVALID_IBAN
 
         val existing = input.id?.let { accountRepository.getById(it) }
         if (input.id != null && existing == null) errors += AccountValidationError.NOT_FOUND
@@ -56,7 +64,11 @@ class SaveAccountUseCase @Inject constructor(
             type = input.type,
             openingBalance = Money(input.openingBalanceMinor, currency),
             institutionName = input.institutionName?.trim()?.takeIf(String::isNotEmpty),
-            ibanEncrypted = existing?.ibanEncrypted,
+            ibanEncrypted = when {
+                iban == null -> existing?.ibanEncrypted
+                iban.isEmpty() -> null
+                else -> fieldCipher.encrypt(iban)
+            },
             connectionId = existing?.connectionId,
             isActive = existing?.isActive ?: true,
             createdAt = existing?.createdAt ?: clock.instant(),

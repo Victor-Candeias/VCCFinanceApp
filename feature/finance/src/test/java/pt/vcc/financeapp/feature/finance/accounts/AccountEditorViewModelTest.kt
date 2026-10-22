@@ -24,11 +24,13 @@ import pt.vcc.financeapp.core.model.Money
 import pt.vcc.financeapp.core.model.Transaction
 import pt.vcc.financeapp.core.model.TransactionSource
 import pt.vcc.financeapp.core.model.TransactionType
+import pt.vcc.financeapp.core.security.testing.FakeFieldCipher
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AccountEditorViewModelTest {
     private val accounts = FakeAccountRepository()
     private val transactions = FakeTransactionRepository()
+    private val cipher = FakeFieldCipher()
     private val existing = Account(
         id = "acc-1",
         name = "Cartão",
@@ -41,7 +43,8 @@ class AccountEditorViewModelTest {
         SavedStateHandle(mapOf(AccountEditorViewModel.ACCOUNT_ID_ARG to accountId)),
         accounts,
         transactions,
-        SaveAccountUseCase(accounts, transactions, Clock.fixed(Instant.EPOCH, ZoneOffset.UTC)),
+        SaveAccountUseCase(accounts, transactions, Clock.fixed(Instant.EPOCH, ZoneOffset.UTC), cipher),
+        cipher,
     )
 
     @Before
@@ -117,5 +120,36 @@ class AccountEditorViewModelTest {
 
         viewModel(existing.id).toggleActive()
         assertTrue(accounts.accounts.value.single().isActive)
+    }
+
+    @Test
+    fun storedIbanIsMaskedUntilRevealedAndKeptWhenUntouched() {
+        accounts.accounts.value = listOf(existing.copy(ibanEncrypted = cipher.encrypt("PT50000201231234567890154")))
+        val vm = viewModel(existing.id)
+
+        assertFalse(vm.uiState.value.isIbanRevealed)
+        vm.onIbanChange("X")
+        assertEquals("PT50000201231234567890154", vm.uiState.value.iban)
+
+        vm.onNameChange("Cartão novo")
+        vm.save()
+        assertEquals("enc:" + "PT50000201231234567890154".reversed(), accounts.accounts.value.single().ibanEncrypted)
+
+        val edit = viewModel(existing.id)
+        edit.revealIban()
+        edit.onIbanChange("pt50 0002 0123 1234 5678 9015 5")
+        edit.save()
+        assertEquals(setOf(AccountEditorError.INVALID_IBAN), edit.uiState.value.errors)
+    }
+
+    @Test
+    fun unreadableIbanIsReportedAndPreserved() {
+        accounts.accounts.value = listOf(existing.copy(ibanEncrypted = "v1:perdido"))
+        val vm = viewModel(existing.id)
+
+        assertTrue(vm.uiState.value.isIbanUnreadable)
+        assertEquals("", vm.uiState.value.iban)
+        vm.save()
+        assertEquals("v1:perdido", accounts.accounts.value.single().ibanEncrypted)
     }
 }

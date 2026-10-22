@@ -39,6 +39,8 @@ kotlin {
 
 dependencies {
     api(project(":core:model"))
+    implementation(project(":core:security"))
+    implementation(libs.sqlcipher.android)
 
     api(libs.room.runtime)
     implementation(libs.room.ktx)

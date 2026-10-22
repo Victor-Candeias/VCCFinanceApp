@@ -33,6 +33,7 @@ kotlin {
 dependencies {
     api(project(":core:model"))
     implementation(project(":core:database"))
+    implementation(project(":core:security"))
 
     implementation(libs.kotlinx.coroutines.core)
 
@@ -41,6 +42,7 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(testFixtures(project(":core:security")))
 
     testFixturesImplementation(libs.kotlinx.coroutines.core)
 }

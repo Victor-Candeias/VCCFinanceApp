@@ -15,7 +15,11 @@ import javax.inject.Qualifier
 import javax.inject.Singleton
 import pt.vcc.financeapp.core.security.AndroidBiometricAuthenticator
 import pt.vcc.financeapp.core.security.BiometricAuthenticator
+import pt.vcc.financeapp.core.security.DatabaseKeyProvider
 import pt.vcc.financeapp.core.security.DataStoreSecurityStore
+import pt.vcc.financeapp.core.security.FieldCipher
+import pt.vcc.financeapp.core.security.KeystoreDatabaseKeyProvider
+import pt.vcc.financeapp.core.security.KeystoreFieldCipher
 import pt.vcc.financeapp.core.security.KeystorePinPepper
 import pt.vcc.financeapp.core.security.PinPepper
 import pt.vcc.financeapp.core.security.SecurityStore
@@ -35,6 +39,12 @@ internal abstract class SecurityModule {
 
     @Binds
     abstract fun bindBiometricAuthenticator(impl: AndroidBiometricAuthenticator): BiometricAuthenticator
+
+    @Binds
+    abstract fun bindFieldCipher(impl: KeystoreFieldCipher): FieldCipher
+
+    @Binds
+    abstract fun bindDatabaseKeyProvider(impl: KeystoreDatabaseKeyProvider): DatabaseKeyProvider
 
     companion object {
         @Provides

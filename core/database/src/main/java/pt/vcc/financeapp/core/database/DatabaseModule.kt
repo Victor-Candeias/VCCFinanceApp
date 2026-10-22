@@ -20,15 +20,18 @@ import pt.vcc.financeapp.core.database.dao.RecurringTransactionDao
 import pt.vcc.financeapp.core.database.dao.SyncHistoryDao
 import pt.vcc.financeapp.core.database.dao.TransactionDao
 import pt.vcc.financeapp.core.database.dao.TransactionRuleDao
+import pt.vcc.financeapp.core.security.DatabaseKeyProvider
 
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
     // Sem fallbackToDestructiveMigration(): uma migration em falta deve falhar, nunca apagar dados.
+    // Cifrada em repouso com SQLCipher (README §10).
     @Provides
     @Singleton
-    fun provideDatabase(@ApplicationContext context: Context): VCCFinanceDatabase =
+    fun provideDatabase(@ApplicationContext context: Context, keyProvider: DatabaseKeyProvider): VCCFinanceDatabase =
         Room.databaseBuilder(context, VCCFinanceDatabase::class.java, VCCFinanceDatabase.NAME)
+            .openHelperFactory(EncryptedOpenHelperFactory(context, keyProvider))
             .addMigrations(*VCCFinanceMigrations.ALL)
             .build()
 

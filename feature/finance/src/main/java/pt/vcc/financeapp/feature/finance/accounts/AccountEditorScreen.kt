@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import pt.vcc.financeapp.core.model.AccountType
+import pt.vcc.financeapp.core.model.Iban
 import pt.vcc.financeapp.feature.finance.R
 import pt.vcc.financeapp.feature.finance.ui.DropdownField
 import pt.vcc.financeapp.feature.finance.ui.LoadingState
@@ -145,6 +146,35 @@ private fun AccountForm(
             onValueChange = viewModel::onInstitutionChange,
             label = { Text(stringResource(R.string.account_field_institution)) },
             singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        val ibanInvalid = AccountEditorError.INVALID_IBAN in state.errors
+        OutlinedTextField(
+            value = if (state.isIbanRevealed) state.iban else Iban.mask(state.iban),
+            onValueChange = viewModel::onIbanChange,
+            readOnly = !state.isIbanRevealed,
+            label = { Text(stringResource(R.string.account_field_iban)) },
+            isError = ibanInvalid,
+            supportingText = {
+                Text(
+                    stringResource(
+                        when {
+                            ibanInvalid -> R.string.account_error_invalid_iban
+                            state.isIbanUnreadable && !state.isIbanChanged -> R.string.account_iban_unreadable
+                            else -> R.string.account_iban_hint
+                        },
+                    ),
+                )
+            },
+            trailingIcon = if (state.isIbanRevealed) null else {
+                { TextButton(onClick = viewModel::revealIban) { Text(stringResource(R.string.account_iban_show)) } }
+            },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(
+                capitalization = KeyboardCapitalization.Characters,
+                autoCorrectEnabled = false,
+                keyboardType = KeyboardType.Ascii,
+            ),
             modifier = Modifier.fillMaxWidth(),
         )
         val currencyError = when {

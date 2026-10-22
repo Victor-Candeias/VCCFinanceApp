@@ -11,6 +11,7 @@ activityCompose = "1.13.0"
 lifecycle = "2.10.0"
 datastore = "1.2.1"
 biometric = "1.1.0"
+sqlcipher = "4.19.1"
 coreKtx = "1.19.1"
 coroutines = "1.11.0"
 serializationJson = "1.11.0"
@@ -43,6 +44,7 @@ hilt-compiler = { module = "com.google.dagger:hilt-android-compiler", version.re
 hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigation" }
 datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
 biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }
+sqlcipher-android = { module = "net.zetetic:sqlcipher-android", version.ref = "sqlcipher" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }

@@ -13,6 +13,7 @@ import pt.vcc.financeapp.core.security.BiometricAuthenticator
 import pt.vcc.financeapp.core.security.BiometricAvailability
 import pt.vcc.financeapp.core.security.BiometricPromptTexts
 import pt.vcc.financeapp.core.security.BiometricResult
+import pt.vcc.financeapp.core.security.FieldCipher
 import pt.vcc.financeapp.core.security.PinPepper
 import pt.vcc.financeapp.core.security.SecurityPreferences
 import pt.vcc.financeapp.core.security.SecurityStore
@@ -81,4 +82,14 @@ class FakeBiometricAuthenticator(
     override fun disable() {
         disabled = true
     }
+}
+
+/** [FieldCipher] reversível e determinístico, só para testes. */
+class FakeFieldCipher : FieldCipher {
+    var failDecrypt = false
+
+    override fun encrypt(plainText: String): String = "enc:" + plainText.reversed()
+
+    override fun decrypt(cipherText: String): String? =
+        if (failDecrypt || !cipherText.startsWith("enc:")) null else cipherText.removePrefix("enc:").reversed()
 }
