@@ -15,6 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -22,6 +23,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -38,6 +40,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import pt.vcc.financeapp.core.data.importer.ImportFile
 import pt.vcc.financeapp.core.data.importer.ImportParseException.Reason
+import pt.vcc.financeapp.core.model.ImportProfile
 import pt.vcc.financeapp.feature.finance.R
 
 /** Importação de extratos (entrada "Importar extratos" do menu Mais). */
@@ -48,6 +51,7 @@ fun ImportScreen(
     viewModel: ImportViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val profiles by viewModel.profiles.collectAsStateWithLifecycle()
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) viewModel.onFileSelected(uri.toString())
     }
@@ -89,7 +93,39 @@ fun ImportScreen(
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodyMedium,
                 )
-                state.file != null -> ImportPreview(state.file!!)
+                state.file != null -> {
+                    val file = state.file!!
+                    val mapping = state.mapping
+                    if (state.profileAutoApplied && state.profile != null) {
+                        Text(
+                            stringResource(R.string.import_profile_auto_applied, state.profile!!.name),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                    if (mapping != null) {
+                        ColumnMappingSection(
+                            table = file.table,
+                            mapping = mapping,
+                            profiles = profiles,
+                            onMappingChange = viewModel::updateMapping,
+                            onDebitCreditChange = viewModel::setDebitCredit,
+                            onApplyProfile = viewModel::applyProfile,
+                        )
+                        if (mapping.isComplete) {
+                            MappingResultCard(state.parsedRows, state.validRows, state.invalidRows)
+                        }
+                        SaveProfileSection(
+                            name = state.profileName,
+                            saved = state.profileSaved,
+                            canSave = mapping.isComplete,
+                            onNameChange = viewModel::onProfileNameChange,
+                            onSave = viewModel::saveProfile,
+                        )
+                    }
+                    ImportPreview(file)
+                }
+                else -> SavedProfiles(profiles, onDelete = viewModel::deleteProfile)
             }
         }
     }
@@ -134,6 +170,29 @@ private fun ImportPreview(file: ImportFile) {
             }
             HorizontalDivider(Modifier.width(140.dp * file.table.columnCount))
         }
+    }
+}
+
+@Composable
+private fun SavedProfiles(profiles: List<ImportProfile>, onDelete: (String) -> Unit) {
+    if (profiles.isEmpty()) return
+    Text(stringResource(R.string.import_profiles_title), style = MaterialTheme.typography.titleMedium)
+    profiles.forEach { profile ->
+        ListItem(
+            headlineContent = { Text(profile.name) },
+            supportingContent = {
+                Text(
+                    profile.headerSignature.ifEmpty { stringResource(R.string.import_header_none) }.replace("|", " · "),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            },
+            trailingContent = {
+                IconButton(onClick = { onDelete(profile.id) }) {
+                    Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.import_profile_delete, profile.name))
+                }
+            },
+        )
     }
 }
 

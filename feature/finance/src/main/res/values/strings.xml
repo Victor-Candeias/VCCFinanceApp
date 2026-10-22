@@ -223,4 +223,46 @@
     <string name="import_error_unsupported">Formato não suportado. Use CSV ou Excel .xlsx (o .xls antigo e ficheiros protegidos por palavra-passe não são suportados).</string>
     <string name="import_error_invalid">Não foi possível ler o ficheiro Excel; pode estar danificado.</string>
     <string name="import_error_read">Não foi possível abrir o ficheiro.</string>
+    <string name="import_mapping_title">Mapeamento de colunas</string>
+    <string name="import_column_none">— Nenhuma —</string>
+    <string name="import_header_label">Linha de cabeçalho</string>
+    <string name="import_header_none">Sem cabeçalho</string>
+    <string name="import_header_row">Linha %1$d: %2$s</string>
+    <string name="import_field_date">Data do movimento</string>
+    <string name="import_field_date_format">Formato da data</string>
+    <string name="import_field_description">Descrição</string>
+    <string name="import_amount_single">Valor com sinal</string>
+    <string name="import_amount_debit_credit">Débito e crédito</string>
+    <string name="import_field_amount">Valor</string>
+    <string name="import_field_debit">Débito (despesas)</string>
+    <string name="import_field_credit">Crédito (receitas)</string>
+    <string name="import_field_value_date">Data-valor (opcional)</string>
+    <string name="import_field_reference">Referência (opcional)</string>
+    <string name="import_field_balance">Saldo (opcional)</string>
+    <string name="import_field_required">Obrigatório</string>
+    <string name="import_invert">Inverter sinal</string>
+    <string name="import_invert_description">Para extratos de cartão em que as compras aparecem como valores positivos.</string>
+    <string name="import_result_title">Resultado</string>
+    <plurals name="import_valid_rows">
+        <item quantity="one">%d movimento válido</item>
+        <item quantity="other">%d movimentos válidos</item>
+    </plurals>
+    <plurals name="import_invalid_rows">
+        <item quantity="one">%d linha com erros</item>
+        <item quantity="other">%d linhas com erros</item>
+    </plurals>
+    <string name="import_row_error">Linha %1$d: %2$s</string>
+    <string name="import_row_error_date">data inválida</string>
+    <string name="import_row_error_description">sem descrição</string>
+    <string name="import_row_error_amount">valor inválido</string>
+    <string name="import_row_error_zero">valor zero</string>
+    <string name="import_profile_apply">Perfil de importação</string>
+    <string name="import_profile_choose">Aplicar um perfil guardado</string>
+    <string name="import_profile_auto_applied">Perfil «%1$s» aplicado automaticamente (cabeçalho reconhecido).</string>
+    <string name="import_profile_name">Nome do perfil (banco)</string>
+    <string name="import_profile_hint">Guarde o mapeamento para reconhecer os próximos extratos deste banco.</string>
+    <string name="import_profile_saved">Perfil guardado.</string>
+    <string name="import_profile_save">Guardar perfil</string>
+    <string name="import_profiles_title">Perfis guardados</string>
+    <string name="import_profile_delete">Apagar o perfil %1$s</string>
 </resources>

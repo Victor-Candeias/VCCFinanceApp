@@ -11,6 +11,7 @@ import pt.vcc.financeapp.core.database.dao.BudgetDao
 import pt.vcc.financeapp.core.database.dao.CategoryDao
 import pt.vcc.financeapp.core.database.dao.FinancialConnectionDao
 import pt.vcc.financeapp.core.database.dao.ImportBatchDao
+import pt.vcc.financeapp.core.database.dao.ImportProfileDao
 import pt.vcc.financeapp.core.database.dao.MerchantDao
 import pt.vcc.financeapp.core.database.dao.RecurringTransactionDao
 import pt.vcc.financeapp.core.database.dao.SyncHistoryDao
@@ -23,6 +24,7 @@ import pt.vcc.financeapp.core.database.entity.BudgetEntity
 import pt.vcc.financeapp.core.database.entity.CategoryEntity
 import pt.vcc.financeapp.core.database.entity.FinancialConnectionEntity
 import pt.vcc.financeapp.core.database.entity.ImportBatchEntity
+import pt.vcc.financeapp.core.database.entity.ImportProfileEntity
 import pt.vcc.financeapp.core.database.entity.MerchantEntity
 import pt.vcc.financeapp.core.database.entity.RecurringTransactionEntity
 import pt.vcc.financeapp.core.database.entity.SyncHistoryEntity
@@ -43,6 +45,7 @@ import pt.vcc.financeapp.core.database.entity.TransactionRuleEntity
         TransactionRuleEntity::class,
         AttachmentEntity::class,
         AccountBalanceSnapshotEntity::class,
+        ImportProfileEntity::class,
     ],
     version = VCCFinanceDatabase.VERSION,
     exportSchema = true,
@@ -61,9 +64,10 @@ abstract class VCCFinanceDatabase : RoomDatabase() {
     abstract fun transactionRuleDao(): TransactionRuleDao
     abstract fun attachmentDao(): AttachmentDao
     abstract fun accountBalanceSnapshotDao(): AccountBalanceSnapshotDao
+    abstract fun importProfileDao(): ImportProfileDao
 
     companion object {
-        const val VERSION = 1
+        const val VERSION = 2
         const val NAME = "vcc_finance.db"
     }
 }

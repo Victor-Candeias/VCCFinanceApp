@@ -15,6 +15,7 @@ import pt.vcc.financeapp.core.database.dao.BudgetDao
 import pt.vcc.financeapp.core.database.dao.CategoryDao
 import pt.vcc.financeapp.core.database.dao.FinancialConnectionDao
 import pt.vcc.financeapp.core.database.dao.ImportBatchDao
+import pt.vcc.financeapp.core.database.dao.ImportProfileDao
 import pt.vcc.financeapp.core.database.dao.MerchantDao
 import pt.vcc.financeapp.core.database.dao.RecurringTransactionDao
 import pt.vcc.financeapp.core.database.dao.SyncHistoryDao
@@ -51,6 +52,7 @@ object DatabaseModule {
 
     @Provides fun syncHistoryDao(db: VCCFinanceDatabase): SyncHistoryDao = db.syncHistoryDao()
     @Provides fun importBatchDao(db: VCCFinanceDatabase): ImportBatchDao = db.importBatchDao()
+    @Provides fun importProfileDao(db: VCCFinanceDatabase): ImportProfileDao = db.importProfileDao()
     @Provides fun transactionRuleDao(db: VCCFinanceDatabase): TransactionRuleDao = db.transactionRuleDao()
     @Provides fun attachmentDao(db: VCCFinanceDatabase): AttachmentDao = db.attachmentDao()
 

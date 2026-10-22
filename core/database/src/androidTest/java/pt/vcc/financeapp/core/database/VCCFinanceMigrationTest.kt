@@ -9,6 +9,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import pt.vcc.financeapp.core.database.entity.ImportProfileEntity
 
 /**
  * Cria a base de dados a partir do schema exportado mais antigo e abre-a com o Room atual e
@@ -50,6 +51,15 @@ class VCCFinanceMigrationTest {
 
         assertEquals(100000L, database.accountDao().getById("acc-1")?.openingBalanceMinor)
         assertEquals(123456L, database.transactionDao().getById("tx-1")?.amountMinor)
+        // v2: tabela de perfis de importação criada vazia e utilizável.
+        val profile = ImportProfileEntity(
+            id = "p-1", name = "CGD", headerSignature = "data mov|descritivo", headerRowIndex = 0,
+            dateColumn = 0, descriptionColumn = 1, amountColumn = 2, debitColumn = null, creditColumn = null,
+            valueDateColumn = null, referenceColumn = null, balanceColumn = null, dateFormat = "dd/MM/yyyy",
+            invertAmounts = false, createdAt = 0, updatedAt = 0,
+        )
+        database.importProfileDao().upsert(profile)
+        assertEquals(profile, database.importProfileDao().findBySignature("data mov|descritivo"))
     }
 
     private companion object {
