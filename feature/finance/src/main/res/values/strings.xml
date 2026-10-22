@@ -8,7 +8,6 @@
     <string name="finance_transactions_title">Movimentos</string>
     <string name="finance_transactions_empty">Sem movimentos neste período.</string>
     <string name="finance_reports_title">Relatórios</string>
-    <string name="finance_reports_empty">Os relatórios ficam disponíveis quando houver movimentos.</string>
     <string name="finance_settings_title">Mais</string>
     <string name="error_loading">Não foi possível carregar os dados.</string>
 
@@ -332,4 +331,21 @@
         <item quantity="one">O %1$d movimento importado de %2$s e o saldo do extrato serão apagados, mesmo que tenha sido editado.</item>
         <item quantity="other">Os %1$d movimentos importados de %2$s e o saldo do extrato serão apagados, mesmo que tenham sido editados.</item>
     </plurals>
+    <string name="reports_period_month">Mês</string>
+    <string name="reports_period_year">Ano</string>
+    <string name="reports_year_previous">Ano anterior</string>
+    <string name="reports_year_next">Ano seguinte</string>
+    <string name="reports_empty">Sem receitas nem despesas confirmadas neste período.</string>
+    <string name="reports_error">Não foi possível gerar o relatório.</string>
+    <string name="reports_currency">Moeda</string>
+    <plurals name="reports_transaction_count">
+        <item quantity="one">%1$d movimento confirmado (sem transferências internas).</item>
+        <item quantity="other">%1$d movimentos confirmados (sem transferências internas).</item>
+    </plurals>
+    <string name="reports_expenses_by_category">Despesas por categoria</string>
+    <string name="reports_expenses_empty">Sem despesas neste período.</string>
+    <string name="reports_income_by_category">Receitas por categoria</string>
+    <string name="reports_income_empty">Sem receitas neste período.</string>
+    <string name="reports_monthly_title">Evolução mensal</string>
+    <string name="reports_by_account">Por conta</string>
 </resources>

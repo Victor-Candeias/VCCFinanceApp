@@ -825,6 +825,8 @@ Exportações: CSV para interoperabilidade, XLSX com folhas `Movimentos`, `Conta
 
 **Implementação (S6-01):** o Início mostra, abaixo do resumo do mês, um gráfico circular das despesas do mês por categoria principal (subcategorias somadas na principal, cinco maiores e "Outras", cor da categoria) e um gráfico de barras de receitas e despesas dos últimos 6 meses (meses sem movimentos incluídos). As agregações são funções puras em `core:model` (`FinancialAggregations`, `CategoryTotal`, `MonthTotals`) reutilizáveis nos relatórios; contam só movimentos confirmados e excluem transferências internas. Sem conversão de moedas, os gráficos usam a moeda com mais movimentos e avisam quando há outras. Cada gráfico tem descrição completa para leitores de ecrã.
 
+**Implementação (S6-02):** o separador Relatórios gera relatórios mensais e anuais (seletor Mês/Ano e navegação entre períodos) a partir de `FinancialReport.build` (`core/model`): totais de receitas, despesas e saldo do período, despesas e receitas por categoria principal (gráfico circular e lista com percentagens), evolução mensal no relatório anual e totais por conta. Contam só movimentos confirmados, sem transferências internas; não há conversão de moeda, por isso há um relatório por moeda e um seletor quando existem várias. `ReportsViewModel` observa os movimentos do período e resolve os nomes de contas e categorias. A exportação fica para S6-04.
+
 ## 14. Testes essenciais
 
 | Cenário | Critério de aceitação |

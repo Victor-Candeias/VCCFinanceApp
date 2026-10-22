@@ -32,17 +32,36 @@ internal fun MonthSelector(
     onNext: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    PeriodSelector(
+        label = month.formatted(),
+        previousDescription = stringResource(R.string.month_previous),
+        nextDescription = stringResource(R.string.month_next),
+        onPrevious = onPrevious,
+        onNext = onNext,
+        modifier = modifier,
+    )
+}
+
+@Composable
+internal fun PeriodSelector(
+    label: String,
+    previousDescription: String,
+    nextDescription: String,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         IconButton(onClick = onPrevious) {
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, stringResource(R.string.month_previous))
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, previousDescription)
         }
-        Text(month.formatted(), style = MaterialTheme.typography.titleMedium)
+        Text(label, style = MaterialTheme.typography.titleMedium)
         IconButton(onClick = onNext) {
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, stringResource(R.string.month_next))
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, nextDescription)
         }
     }
 }

@@ -27,9 +27,17 @@ object FinancialAggregations {
         transactions: Iterable<Transaction>,
         currency: String,
         rootOf: (String?) -> String? = { it },
+    ): List<CategoryTotal> = totalsByCategory(transactions, TransactionType.EXPENSE, currency, rootOf)
+
+    /** Totais por categoria do [type] (receita ou despesa) na [currency], do maior para o menor. */
+    fun totalsByCategory(
+        transactions: Iterable<Transaction>,
+        type: TransactionType,
+        currency: String,
+        rootOf: (String?) -> String? = { it },
     ): List<CategoryTotal> =
         transactions
-            .filter { it.countsAs(TransactionType.EXPENSE, currency) }
+            .filter { it.countsAs(type, currency) }
             .groupBy { rootOf(it.categoryId) }
             .map { (categoryId, items) -> CategoryTotal(categoryId, items.sum(currency)) }
             .sortedWith(compareByDescending<CategoryTotal> { it.total.amountMinor }.thenBy { it.categoryId.orEmpty() })
