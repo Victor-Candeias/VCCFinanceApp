@@ -22,4 +22,5 @@ owner: developer
 | S7-04 | Sincronização WorkManager e reconciliação | backlog | 2026-10-19 |  | low |  |  |  |  |
 | S7-05 | Rever privacidade, política de dados e requisitos Google Play | backlog | 2026-10-19 |  | low |  |  |  |  |
 | S7-06 | Preparar autenticação multiutilizador e isolamento de dados no backend | backlog | 2026-10-19 |  | low |  |  |  |  |
+| S7-07 | Ícone da app a partir de images/VCCTeamForge.jpg | done | 2026-10-22 |  | medium | 2026-10-22 |  |  |  |
 <!-- /maestru:work-items-list -->

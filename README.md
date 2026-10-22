@@ -906,6 +906,8 @@ Adicionar testes unitários (cálculo financeiro e regras), testes de Room em di
 
 Desde o início: UUIDs, migrations, isolamento por camadas, interfaces de integração, histórico de importações/sincronização, backup seguro, minimização de dados, testes automatizados, CI/CD e documentação. Não introduzir prematuramente Firebase Authentication, MongoDB, Redis ou infraestrutura cloud; a primeira versão não depende deles. Para publicação, avaliar políticas Google Play, proteção de dados, consentimentos e requisitos regulatórios aplicáveis.
 
+**Ícone da app (S7-07):** a imagem original está em `images/VCCTeamForge.jpg`. O ícone adaptativo (`mipmap-anydpi/ic_launcher*.xml`) usa essa imagem recortada, sem os cantos pretos, como camada da frente (`mipmap-*dpi/ic_launcher_foreground.png`, 108 dp com o conteúdo em 76 dp para caber nas máscaras dos launchers), fundo `@color/ic_launcher_background` (`#0B2A6A`) e, para os ícones temáticos do Android 13+, a silhueta vetorial `drawable/ic_launcher_monochrome.xml`. Para trocar a imagem, voltar a gerar as cinco densidades a partir do novo original.
+
 ## 17. Entregável da primeira milestone
 
 A primeira milestone deve produzir um **projeto Android Studio compilável** com os sete módulos, Gradle validado, Hilt, Room, Navigation Compose, dashboard simples, lista/criação de contas e testes básicos. Os blocos de código deste documento são **esqueletos de arquitetura**, não um projeto integral já compilado: faltam imports, `build.gradle.kts` de cada biblioteca, recursos, DTOs, modelos de domínio, algumas implementações de segurança e testes.
