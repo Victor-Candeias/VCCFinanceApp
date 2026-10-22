@@ -13,6 +13,7 @@ import pt.vcc.financeapp.feature.finance.dashboard.DashboardScreen
 import pt.vcc.financeapp.feature.finance.importexport.ImportScreen
 import pt.vcc.financeapp.feature.finance.budgets.BudgetEditorScreen
 import pt.vcc.financeapp.feature.finance.budgets.BudgetsScreen
+import pt.vcc.financeapp.feature.finance.backup.BackupScreen
 import pt.vcc.financeapp.feature.finance.importexport.ExportScreen
 import pt.vcc.financeapp.feature.finance.reports.ReportsScreen
 import pt.vcc.financeapp.feature.finance.settings.SettingsEntry
@@ -81,6 +82,9 @@ fun NavGraphBuilder.financeGraph(
     composable<ExportRoute> {
         ExportScreen(onBack = { navController.popBackStack() })
     }
+    composable<BackupRoute> {
+        BackupScreen(onBack = { navController.popBackStack() })
+    }
     composable<BudgetsRoute> {
         BudgetsScreen(
             onBack = { navController.popBackStack() },
@@ -115,7 +119,11 @@ fun NavGraphBuilder.financeGraph(
                     stringResource(R.string.settings_export_description),
                     onClick = { navController.navigate(ExportRoute) },
                 ),
-                SettingsEntry(stringResource(R.string.settings_backup), stringResource(R.string.settings_backup_description)),
+                SettingsEntry(
+                    stringResource(R.string.settings_backup),
+                    stringResource(R.string.settings_backup_description),
+                    onClick = { navController.navigate(BackupRoute) },
+                ),
             ),
         )
     }

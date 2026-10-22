@@ -602,7 +602,7 @@ class VCCFinanceApplication : Application()
 </application>
 ```
 
-O tema XML da Activity tem de existir nos recursos Android, mesmo com UI Compose. Rever política de backup ao implementar backups encriptados.
+O tema XML da Activity tem de existir nos recursos Android, mesmo com UI Compose. `allowBackup` mantém-se `false`: a cópia automática do Android levaria a base de dados SQLCipher sem a chave do Keystore, inútil noutro dispositivo; o backup é o ficheiro `.vccbackup` cifrado com palavra-passe (S6-05).
 
 ## 9. Navigation Compose e ecrãs
 
@@ -831,6 +831,8 @@ Exportações: CSV para interoperabilidade, XLSX com folhas `Movimentos`, `Conta
 
 **Implementação (S6-04):** Mais → Exportar dados escolhe o formato (CSV, XLSX, PDF ou JSON) e o período (mês, ano ou todos os movimentos) e grava com o seletor do sistema (`CreateDocument`, sem permissões de armazenamento). `ExportDataUseCase` (`core/data/exporter`) reúne contas (também as inativas), categorias e movimentos num `ExportData` e escreve no formato pedido: CSV em UTF-8 com BOM, `;` e vírgula decimal, com proteção contra fórmulas; XLSX escrito diretamente (folhas `Movimentos`, `Contas`, `Categorias`, `Resumo`, datas e montantes numéricos), legível pelo próprio importador; PDF A4 com `PdfDocument` (resumo por moeda, barras por categoria principal e tabela paginada); JSON com identificadores e `amountMinor`. Os montantes das despesas saem negativos. O IBAN nunca é exportado e o ecrã avisa que o ficheiro não é encriptado.
 
+**Implementação (S6-05):** Mais → Backup e restauro. Criar backup pede uma palavra-passe (mínimo 10 caracteres, repetida) e grava com o seletor do sistema um ficheiro `vccfinance-backup-AAAA-MM-DD.vccbackup`. O conteúdo é a fotografia integral de todas as tabelas (`RoomDatabaseBackupStore`, `core/database/backup`, lida em SQL a partir de `sqlite_master`, sem mapeamentos por entidade) em JSON comprimido com GZIP, cifrado por `BackupCrypto` (`core/data/backup`): chave PBKDF2-HMAC-SHA256 com 600 000 iterações e salt aleatório, AES-256-GCM com IV aleatório e o cabeçalho (`VCCBKP`, versão, iterações, salt, IV) autenticado como AAD. O IBAN segue decifrado dentro do ficheiro, porque a chave do `FieldCipher` não sai do Keystore, e volta a ser cifrado com a chave do dispositivo no restauro. Restaurar tem dois passos: abrir decifra e valida o ficheiro sem tocar nos dados (palavra-passe errada ou ficheiro alterado são detetados pela GCM; formatos, versões de esquema mais recentes, tabelas ou colunas desconhecidas são rejeitados) e mostra o resumo; só depois da confirmação os dados atuais são substituídos numa única transação Room (apaga tudo, insere pela ordem das chaves estrangeiras e corre `PRAGMA foreign_key_check` antes do commit), por isso ou fica tudo restaurado ou nada muda, sem duplicados. Os anexos ficam só como metadados (ainda não há ficheiros de anexos na app). O ficheiro lido está limitado a 10 MB.
+
 ## 14. Testes essenciais
 
 | Cenário | Critério de aceitação |
@@ -931,3 +933,4 @@ A primeira milestone deve produzir um **projeto Android Studio compilável** com
 | 22/10/2026 | Gráficos desenhados com `Canvas` do Compose em vez de Vico: só são precisos gráficos circulares e de barras simples, evita-se uma dependência e o mesmo desenho pode ser replicado no PDF das exportações. Valores em unidades mínimas (`Long`) até ao desenho, percentagens com aritmética inteira. |
 | 23/10/2026 | Alertas de orçamento apenas dentro da app (cartão no Início e cores no ecrã de Orçamentos). Notificações do sistema ficam adiadas: exigem a permissão `POST_NOTIFICATIONS` e trabalho em segundo plano (WorkManager, S7-04), e a app é usada só localmente. |
 | 23/10/2026 | Exportações sem bibliotecas: XLSX escrito como ZIP + XML (`inlineStr`, sem Apache POI) e PDF com `android.graphics.pdf.PdfDocument`. Os ficheiros exportados não são encriptados (destinam-se a outras aplicações) e excluem o IBAN; a cópia de segurança encriptada fica no backup (S6-05). O JSON de exportação não é o formato de backup. |
+| 23/10/2026 | Backup próprio em vez do Auto Backup do Android: ficheiro `.vccbackup` cifrado com palavra-passe do utilizador (PBKDF2-HMAC-SHA256 600 000 iterações + AES-256-GCM), portável entre dispositivos. Restauro é sempre substituição integral numa transação (sem fusão de dados). Não se pede o PIN de novo antes de criar/restaurar: a app já está desbloqueada e o backup exige a sua própria palavra-passe; reautenticação fica para revisão conjunta com as exportações. |

@@ -20,5 +20,5 @@ owner: developer
 | S6-02 | Relatórios mensais, anuais e por categoria | done | 2026-10-19 |  | medium | 2026-10-22 |  |  |  |
 | S6-03 | Orçamentos e alertas | done | 2026-10-19 |  | medium | 2026-10-22 |  |  |  |
 | S6-04 | Exportação CSV, XLSX, PDF e JSON | done | 2026-10-19 |  | medium | 2026-10-22 |  |  |  |
-| S6-05 | Backup e restauro encriptados | backlog | 2026-10-19 |  | medium |  |  |  |  |
+| S6-05 | Backup e restauro encriptados | done | 2026-10-19 |  | medium | 2026-10-22 |  |  |  |
 <!-- /maestru:work-items-list -->

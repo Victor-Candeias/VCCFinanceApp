@@ -8,6 +8,8 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
+import pt.vcc.financeapp.core.database.backup.DatabaseBackupStore
+import pt.vcc.financeapp.core.database.backup.RoomDatabaseBackupStore
 import pt.vcc.financeapp.core.database.dao.AccountBalanceSnapshotDao
 import pt.vcc.financeapp.core.database.dao.AccountDao
 import pt.vcc.financeapp.core.database.dao.AttachmentDao
@@ -37,6 +39,7 @@ object DatabaseModule {
             .build()
 
     @Provides fun databaseStorage(storage: AndroidDatabaseStorage): DatabaseStorage = storage
+    @Provides fun databaseBackupStore(store: RoomDatabaseBackupStore): DatabaseBackupStore = store
 
     @Provides fun accountDao(db: VCCFinanceDatabase): AccountDao = db.accountDao()
     @Provides fun transactionDao(db: VCCFinanceDatabase): TransactionDao = db.transactionDao()

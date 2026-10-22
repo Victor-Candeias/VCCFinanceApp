@@ -407,4 +407,48 @@
         <item quantity="other">Exportados %1$d movimentos.</item>
     </plurals>
     <string name="export_failed">Não foi possível escrever o ficheiro. Tenta outro local.</string>
+
+    <string name="backup_title">Backup e restauro</string>
+    <string name="backup_info">O backup inclui todas as contas, movimentos, categorias, orçamentos, regras e histórico de importações, cifrados com a palavra-passe que escolher. Guarde-a num local seguro: sem ela não é possível restaurar o backup.</string>
+    <string name="backup_create_title">Criar backup</string>
+    <string name="backup_password">Palavra-passe do backup</string>
+    <plurals name="backup_password_hint">
+        <item quantity="one">Pelo menos %1$d carácter</item>
+        <item quantity="other">Pelo menos %1$d caracteres</item>
+    </plurals>
+    <string name="backup_password_confirmation">Confirmar palavra-passe</string>
+    <string name="backup_password_mismatch">As palavras-passe não coincidem</string>
+    <string name="backup_create_action">Criar backup</string>
+    <string name="backup_restore_title">Restaurar backup</string>
+    <string name="backup_restore_warning">O restauro substitui todos os dados atuais pelos do backup.</string>
+    <string name="backup_restore_choose">Escolher ficheiro de backup</string>
+    <string name="backup_restore_choose_other">Escolher outro ficheiro</string>
+    <string name="backup_restore_selected">Ficheiro selecionado. Introduza a palavra-passe usada ao criar o backup.</string>
+    <string name="backup_restore_open">Abrir backup</string>
+    <string name="backup_restore_confirm_title">Substituir todos os dados?</string>
+    <string name="backup_restore_confirm_message">Backup de %1$s com %2$s. Os dados atuais serão apagados e substituídos. Esta ação não pode ser anulada.</string>
+    <string name="backup_restore_confirm">Restaurar</string>
+    <string name="backup_in_progress">A processar… pode demorar alguns segundos.</string>
+    <string name="backup_contents">%1$s, %2$s e %3$s</string>
+    <string name="backup_created">Backup criado com %1$s.</string>
+    <string name="backup_restored">Backup restaurado: %1$s.</string>
+    <string name="backup_error_not_a_backup">O ficheiro escolhido não é um backup válido da app.</string>
+    <string name="backup_error_wrong_password">Palavra-passe errada ou ficheiro danificado.</string>
+    <string name="backup_error_incompatible">Este backup foi criado por uma versão incompatível da app.</string>
+    <string name="backup_error_too_large">O ficheiro é demasiado grande.</string>
+    <string name="backup_error_read">Não foi possível ler o ficheiro.</string>
+    <string name="backup_error_write">Não foi possível escrever o backup.</string>
+    <string name="backup_error_restore">Não foi possível restaurar; os dados atuais não foram alterados.</string>
+    <plurals name="backup_accounts">
+        <item quantity="one">%1$d conta</item>
+        <item quantity="other">%1$d contas</item>
+    </plurals>
+    <plurals name="backup_transactions">
+        <item quantity="one">%1$d movimento</item>
+        <item quantity="other">%1$d movimentos</item>
+    </plurals>
+    <plurals name="backup_categories">
+        <item quantity="one">%1$d categoria</item>
+        <item quantity="other">%1$d categorias</item>
+    </plurals>
 </resources>
