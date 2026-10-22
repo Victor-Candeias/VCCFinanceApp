@@ -37,3 +37,10 @@ data object ChangePinRoute
 
 @Serializable
 data object ImportRoute
+
+@Serializable
+data object BudgetsRoute
+
+/** Editor de orçamento; [budgetId] nulo cria um orçamento novo. */
+@Serializable
+data class BudgetEditorRoute(val budgetId: String? = null)

@@ -7,10 +7,12 @@ import dagger.hilt.components.SingletonComponent
 import pt.vcc.financeapp.core.data.importer.ContentResolverDocumentReader
 import pt.vcc.financeapp.core.data.importer.DocumentReader
 import pt.vcc.financeapp.core.data.repository.AccountRepository
+import pt.vcc.financeapp.core.data.repository.BudgetRepository
 import pt.vcc.financeapp.core.data.repository.CategoryRepository
 import pt.vcc.financeapp.core.data.repository.ImportBatchRepository
 import pt.vcc.financeapp.core.data.repository.ImportProfileRepository
 import pt.vcc.financeapp.core.data.repository.LocalAccountRepository
+import pt.vcc.financeapp.core.data.repository.LocalBudgetRepository
 import pt.vcc.financeapp.core.data.repository.LocalCategoryRepository
 import pt.vcc.financeapp.core.data.repository.LocalImportBatchRepository
 import pt.vcc.financeapp.core.data.repository.LocalImportProfileRepository
@@ -37,4 +39,7 @@ internal abstract class RepositoryModule {
 
     @Binds
     abstract fun bindImportProfileRepository(implementation: LocalImportProfileRepository): ImportProfileRepository
+
+    @Binds
+    abstract fun bindBudgetRepository(implementation: LocalBudgetRepository): BudgetRepository
 }

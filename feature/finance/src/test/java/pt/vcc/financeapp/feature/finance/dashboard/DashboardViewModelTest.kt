@@ -18,11 +18,15 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import pt.vcc.financeapp.core.data.testing.FakeAccountRepository
+import pt.vcc.financeapp.core.data.testing.FakeBudgetRepository
 import pt.vcc.financeapp.core.data.testing.FakeCategoryRepository
 import pt.vcc.financeapp.core.data.testing.FakeTransactionRepository
 import pt.vcc.financeapp.core.data.usecase.ObserveAccountBalancesUseCase
+import pt.vcc.financeapp.core.data.usecase.ObserveBudgetProgressUseCase
 import pt.vcc.financeapp.core.model.Account
 import pt.vcc.financeapp.core.model.AccountType
+import pt.vcc.financeapp.core.model.Budget
+import pt.vcc.financeapp.core.model.BudgetPeriod
 import pt.vcc.financeapp.core.model.Category
 import pt.vcc.financeapp.core.model.Money
 import pt.vcc.financeapp.core.model.Transaction
@@ -58,10 +62,19 @@ class DashboardViewModelTest {
             tx("usd", "2026-10-05T12:00:00Z", 100, null, currency = "USD"),
         ) + (1..6).map { tx("c$it", "2026-10-06T12:00:00Z", 100L * it, "c$it") }
         val repo = FakeTransactionRepository(transactions)
+        val categoryRepository = FakeCategoryRepository(categories)
+        val budgets = FakeBudgetRepository(
+            listOf(
+                budget("ok", 1_000_000, null),
+                budget("warning", 3_500, "food"),
+                budget("exceeded", 500, "c6"),
+            ),
+        )
         val viewModel = DashboardViewModel(
             ObserveAccountBalancesUseCase(FakeAccountRepository(listOf(account)), repo),
             repo,
-            FakeCategoryRepository(categories),
+            categoryRepository,
+            ObserveBudgetProgressUseCase(budgets, repo, categoryRepository, clock),
             clock,
         )
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect {} }
@@ -75,11 +88,22 @@ class DashboardViewModelTest {
             state.expensesByCategory.map { it.name to it.total.amountMinor },
         )
         assertTrue(state.expensesByCategory.last().isOthers)
+        assertEquals(listOf("exceeded" to "Categoria 6", "warning" to "Alimentação"), state.budgetAlerts.map { it.progress.budget.id to it.categoryName })
         assertEquals((5L downTo 0L).map { YearMonth.of(2026, 10).minusMonths(it) }, state.monthlyTotals.map { it.month })
         assertEquals(listOf(17_776L, 0L, 0L, 0L, 0L, 5_600L), state.monthlyTotals.map { it.totals.expenses.amountMinor })
         assertEquals(100_000L, state.monthlyTotals.last().totals.income.amountMinor)
         assertEquals(Money(5_600, "EUR"), state.monthTotals.first { it.currency == "EUR" }.expenses)
     }
+
+    private fun budget(id: String, limit: Long, categoryId: String?) = Budget(
+        id = id,
+        name = id,
+        limit = Money(limit, "EUR"),
+        period = BudgetPeriod.MONTHLY,
+        startDate = Instant.EPOCH,
+        categoryId = categoryId,
+        createdAt = Instant.EPOCH,
+    )
 
     private fun category(id: String, name: String, parent: String? = null) =
         Category(id, name, icon = "", color = "#123456", type = TransactionType.EXPENSE, parentCategoryId = parent)

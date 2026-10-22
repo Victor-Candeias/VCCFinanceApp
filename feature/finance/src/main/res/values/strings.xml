@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="finance_dashboard_title">Início</string>
     <string name="finance_dashboard_no_accounts">Cria a primeira conta para começar a registar movimentos.</string>
     <string name="finance_dashboard_view_accounts">Ver contas</string>
@@ -348,4 +348,38 @@
     <string name="reports_income_empty">Sem receitas neste período.</string>
     <string name="reports_monthly_title">Evolução mensal</string>
     <string name="reports_by_account">Por conta</string>
+    <string name="settings_budgets">Orçamentos</string>
+    <string name="settings_budgets_description">Limites de gasto por categoria e alertas</string>
+    <string name="budgets_title">Orçamentos</string>
+    <string name="budgets_add">Novo orçamento</string>
+    <string name="budgets_empty">Ainda não há orçamentos. Cria um para acompanhar os gastos por categoria.</string>
+    <string name="budget_all_expenses">Todas as despesas</string>
+    <string name="budget_period_weekly">Semanal</string>
+    <string name="budget_period_monthly">Mensal</string>
+    <string name="budget_period_quarterly">Trimestral</string>
+    <string name="budget_period_yearly" tools:ignore="Typos">Anual</string>
+    <string name="budget_spent_of">%1$s de %2$s</string>
+    <string name="budget_remaining">Restam %1$s</string>
+    <string name="budget_exceeded_by">Excedido em %1$s</string>
+    <string name="budget_warning">Atingiu o alerta de %1$d %% do limite.</string>
+    <string name="budget_editor_new_title">Novo orçamento</string>
+    <string name="budget_editor_edit_title">Editar orçamento</string>
+    <string name="budget_not_found">Este orçamento já não existe.</string>
+    <string name="budget_field_name">Nome</string>
+    <string name="budget_field_category">Categoria</string>
+    <string name="budget_category_hint">Inclui as subcategorias.</string>
+    <string name="budget_field_period">Período</string>
+    <string name="budget_field_limit">Limite</string>
+    <string name="budget_field_currency">Moeda</string>
+    <string name="budget_field_threshold">Percentagem de alerta</string>
+    <string name="budget_threshold_hint">Mostra um alerta quando o gasto atingir esta percentagem do limite.</string>
+    <string name="budget_error_blank_name">Indica um nome para o orçamento.</string>
+    <string name="budget_error_name_too_long">O nome não pode ter mais de 60 caracteres.</string>
+    <string name="budget_error_amount">Indica um limite maior do que zero, por exemplo 250,00.</string>
+    <string name="budget_error_threshold">Indica um valor entre 1 e 100.</string>
+    <string name="budget_error_category">Escolhe uma categoria de despesa.</string>
+    <string name="budget_delete">Apagar orçamento</string>
+    <string name="budget_delete_title">Apagar orçamento?</string>
+    <string name="budget_delete_message">O orçamento deixa de aparecer e de gerar alertas. Os movimentos não são alterados.</string>
+    <string name="dashboard_budget_alerts">Alertas de orçamento</string>
 </resources>

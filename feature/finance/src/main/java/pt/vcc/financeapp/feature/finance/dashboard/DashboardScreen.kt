@@ -23,6 +23,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import pt.vcc.financeapp.core.designsystem.components.EmptyState
 import pt.vcc.financeapp.feature.finance.R
+import pt.vcc.financeapp.feature.finance.budgets.BudgetCard
 import pt.vcc.financeapp.feature.finance.transactions.TransactionRow
 import pt.vcc.financeapp.feature.finance.ui.BalanceTotalsCard
 import pt.vcc.financeapp.feature.finance.ui.ChartBarGroup
@@ -41,6 +42,7 @@ import pt.vcc.financeapp.feature.finance.ui.shortLabel
 @Composable
 fun DashboardScreen(
     onAccountsClick: () -> Unit,
+    onBudgetClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
@@ -66,7 +68,7 @@ fun DashboardScreen(
             )
             Button(onClick = onAccountsClick) { Text(stringResource(R.string.finance_dashboard_view_accounts)) }
         }
-        else -> DashboardContent(state, onAccountsClick, modifier)
+        else -> DashboardContent(state, onAccountsClick, onBudgetClick, modifier)
     }
 }
 
@@ -138,7 +140,7 @@ private fun DashboardCharts(state: DashboardUiState, modifier: Modifier) {
 }
 
 @Composable
-private fun DashboardContent(state: DashboardUiState, onAccountsClick: () -> Unit, modifier: Modifier) {
+private fun DashboardContent(state: DashboardUiState, onAccountsClick: () -> Unit, onBudgetClick: (String) -> Unit, modifier: Modifier) {
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -151,6 +153,16 @@ private fun DashboardContent(state: DashboardUiState, onAccountsClick: () -> Uni
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.padding(horizontal = 16.dp),
         )
+        if (state.budgetAlerts.isNotEmpty()) {
+            Text(
+                text = stringResource(R.string.dashboard_budget_alerts),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(horizontal = 16.dp),
+            )
+            state.budgetAlerts.forEach { item ->
+                BudgetCard(item, onClick = { onBudgetClick(item.progress.budget.id) }, Modifier.padding(horizontal = 16.dp))
+            }
+        }
         PeriodTotalsCard(state.monthTotals, Modifier.padding(horizontal = 16.dp))
         DashboardCharts(state, Modifier.padding(horizontal = 16.dp))
         Text(

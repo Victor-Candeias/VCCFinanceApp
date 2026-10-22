@@ -14,6 +14,8 @@ import kotlinx.coroutines.flow.stateIn
 import pt.vcc.financeapp.core.data.repository.CategoryRepository
 import pt.vcc.financeapp.core.data.repository.TransactionRepository
 import pt.vcc.financeapp.core.data.usecase.ObserveAccountBalancesUseCase
+import pt.vcc.financeapp.core.data.usecase.ObserveBudgetProgressUseCase
+import pt.vcc.financeapp.core.model.BudgetAlertLevel
 import pt.vcc.financeapp.core.model.AccountBalanceCalculator
 import pt.vcc.financeapp.core.model.Category
 import pt.vcc.financeapp.core.model.FinancialAggregations
@@ -21,6 +23,8 @@ import pt.vcc.financeapp.core.model.Money
 import pt.vcc.financeapp.core.model.MonthTotals
 import pt.vcc.financeapp.core.model.PeriodTotals
 import pt.vcc.financeapp.core.model.Transaction
+import pt.vcc.financeapp.feature.finance.budgets.BudgetItem
+import pt.vcc.financeapp.feature.finance.budgets.toItems
 import pt.vcc.financeapp.feature.finance.transactions.TransactionItem
 import pt.vcc.financeapp.feature.finance.transactions.toItems
 import pt.vcc.financeapp.feature.finance.ui.toInstantRange
@@ -48,6 +52,8 @@ data class DashboardUiState(
     val chartOmitsCurrencies: Boolean = false,
     val expensesByCategory: List<DashboardCategory> = emptyList(),
     val monthlyTotals: List<MonthTotals> = emptyList(),
+    /** Orçamentos no limiar de alerta ou excedidos, os excedidos primeiro. */
+    val budgetAlerts: List<BudgetItem> = emptyList(),
     val error: String? = null,
 )
 
@@ -56,6 +62,7 @@ class DashboardViewModel @Inject constructor(
     observeAccountBalances: ObserveAccountBalancesUseCase,
     transactionRepository: TransactionRepository,
     categoryRepository: CategoryRepository,
+    observeBudgetProgress: ObserveBudgetProgressUseCase,
     clock: Clock,
 ) : ViewModel() {
     private val month = YearMonth.now(clock)
@@ -69,7 +76,8 @@ class DashboardViewModel @Inject constructor(
             observeAccountBalances(),
             transactionRepository.observeInPeriod(from, to),
             categoryRepository.observeAllCategories(),
-        ) { balances, recent, categories ->
+            observeBudgetProgress(),
+        ) { balances, recent, categories, budgets ->
             val accounts = balances.map { it.account }
             val active = balances.filter { it.account.isActive }
             val transactions = recent.filter { it.bookingDate >= monthFrom }
@@ -85,6 +93,10 @@ class DashboardViewModel @Inject constructor(
                 chartOmitsCurrencies = currency != null && recent.any { it.amount.currency != currency && !it.isInternalTransfer },
                 expensesByCategory = currency?.let { categorySlices(transactions, it, categories) }.orEmpty(),
                 monthlyTotals = currency?.let { FinancialAggregations.monthlyTotals(recent, it, months, zone) }.orEmpty(),
+                budgetAlerts = budgets
+                    .filter { it.alertLevel != BudgetAlertLevel.OK }
+                    .sortedByDescending { it.alertLevel == BudgetAlertLevel.EXCEEDED }
+                    .toItems(categories),
             )
         }
             .catch { emit(DashboardUiState(month = month, isLoading = false, error = it.message)) }
