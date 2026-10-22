@@ -143,6 +143,11 @@ class ChangePinViewModel @Inject constructor(
                 _uiState.update { ChangePinUiState() }
                 sessionManager.lock()
             }
+            PinVerification.KeyUnavailable -> {
+                clearPins()
+                _uiState.update { ChangePinUiState() }
+                sessionManager.requireRecovery()
+            }
             PinVerification.Success -> Unit
         }
     }

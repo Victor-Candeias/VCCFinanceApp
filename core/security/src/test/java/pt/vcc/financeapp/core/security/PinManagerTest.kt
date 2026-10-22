@@ -51,10 +51,15 @@ class PinManagerTest {
         val manager = manager(StandardTestDispatcher(testScheduler))
         assertNotSuccess(manager.verifyPin("2580".toCharArray()))
 
+        assertTrue(manager.isPinKeyAvailable())
+
         manager.configurePin("2580".toCharArray())
         pepper.deleteKey()
 
-        assertNotSuccess(manager.verifyPin("2580".toCharArray()))
+        assertFalse(manager.isPinKeyAvailable())
+        assertEquals(PinVerification.KeyUnavailable, manager.verifyPin("2580".toCharArray()))
+        // Sem chave não há tentativa real: não deve consumir tentativas nem bloquear.
+        assertEquals(0, store.value.failedAttempts)
     }
 
     @Test(expected = IllegalArgumentException::class)

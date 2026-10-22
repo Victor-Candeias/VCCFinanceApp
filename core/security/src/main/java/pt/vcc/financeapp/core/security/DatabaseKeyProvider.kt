@@ -18,6 +18,12 @@ interface DatabaseKeyProvider {
      * chave guardada não puder ser decifrada (por exemplo, chave do Keystore apagada).
      */
     fun getOrCreateKey(): ByteArray
+
+    /** `true` se a chave guardada existir e puder ser decifrada. */
+    fun isKeyUsable(): Boolean
+
+    /** Apaga a chave guardada e a chave do Keystore que a protege (os dados cifrados ficam ilegíveis). */
+    fun deleteKey()
 }
 
 class DatabaseKeyUnavailableException(message: String) : IllegalStateException(message)
@@ -52,6 +58,16 @@ internal class KeystoreDatabaseKeyProvider @Inject constructor(
             throw e
         }
         return key
+    }
+
+    @Synchronized
+    override fun isKeyUsable(): Boolean =
+        hasKey() && runCatching { wrapper.decrypt(file.readFully()) }.getOrNull()?.also { it.fill(0) } != null
+
+    @Synchronized
+    override fun deleteKey() {
+        file.delete()
+        wrapper.deleteKey()
     }
 
     private companion object {

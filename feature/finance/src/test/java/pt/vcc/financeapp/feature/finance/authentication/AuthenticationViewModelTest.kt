@@ -15,7 +15,12 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import pt.vcc.financeapp.core.data.recovery.AppRecoveryManager
+import pt.vcc.financeapp.core.data.testing.FakeDatabaseStorage
 import pt.vcc.financeapp.core.security.AutoLockController
+import pt.vcc.financeapp.core.security.SecurityReset
+import pt.vcc.financeapp.core.security.testing.FakeDatabaseKeyProvider
+import pt.vcc.financeapp.core.security.testing.FakeFieldCipher
 import pt.vcc.financeapp.core.security.BiometricAvailability
 import pt.vcc.financeapp.core.security.BiometricResult
 import pt.vcc.financeapp.core.security.PinManager
@@ -32,9 +37,20 @@ class AuthenticationViewModelTest {
     private val dispatcher = UnconfinedTestDispatcher()
     private val store = InMemorySecurityStore()
     private val clock = MutableClock()
-    private val pinManager = PinManager(store, FakePinPepper(), clock, dispatcher, iterations = 1_000)
+    private val pepper = FakePinPepper()
+    private val pinManager = PinManager(store, pepper, clock, dispatcher, iterations = 1_000)
     private val sessionManager = SessionManager()
     private val biometric = FakeBiometricAuthenticator()
+    private val databaseStorage = FakeDatabaseStorage()
+    private val recoveryManager = AppRecoveryManager(
+        pinManager,
+        databaseStorage,
+        SecurityReset(store, pepper, biometric, FakeFieldCipher(), FakeDatabaseKeyProvider()),
+        dispatcher,
+    )
+
+    private fun sessionViewModel() =
+        SessionViewModel(pinManager, sessionManager, store, AutoLockController(sessionManager, clock), recoveryManager)
 
     private fun unlockViewModel() = UnlockViewModel(pinManager, sessionManager, clock, store, biometric).apply { onShown() }
 
@@ -166,9 +182,53 @@ class AuthenticationViewModelTest {
     fun sessionViewModelStartsLockedWhenPinExists() = runTest(dispatcher) {
         pinManager.configurePin("2580".toCharArray())
 
-        val vm = SessionViewModel(pinManager, sessionManager, store, AutoLockController(sessionManager, clock))
+        val vm = sessionViewModel()
 
         assertEquals(SessionState.LOCKED, vm.sessionState.value)
+    }
+
+    @Test
+    fun sessionStartsInRecoveryWhenKeysAreLost() = runTest(dispatcher) {
+        pinManager.configurePin("2580".toCharArray())
+        databaseStorage.readable = false
+
+        val vm = sessionViewModel()
+
+        assertEquals(SessionState.RECOVERY_REQUIRED, vm.sessionState.value)
+        sessionManager.unlock()
+        assertEquals(SessionState.RECOVERY_REQUIRED, sessionManager.state.value)
+    }
+
+    @Test
+    fun unlockMovesToRecoveryWhenPinKeyDisappears() = runTest(dispatcher) {
+        pinManager.configurePin("2580".toCharArray())
+        sessionManager.initialize(pinConfigured = true)
+        val vm = unlockViewModel()
+        pepper.deleteKey()
+
+        vm.type("2580")
+
+        assertEquals(SessionState.RECOVERY_REQUIRED, sessionManager.state.value)
+        assertEquals(0, store.value.failedAttempts)
+    }
+
+    @Test
+    fun resetRequiresTypedConfirmationThenErasesEverything() = runTest(dispatcher) {
+        pinManager.configurePin("2580".toCharArray())
+        val vm = ResetAppViewModel(recoveryManager)
+
+        vm.onConfirmationChange("apagar")
+        vm.erase()
+        assertFalse(vm.uiState.value.canErase)
+        assertFalse(databaseStorage.deleted)
+        assertTrue(store.value.isPinConfigured)
+
+        vm.onConfirmationChange("APAGAR ")
+        vm.erase()
+
+        assertTrue(vm.uiState.value.isErased)
+        assertTrue(databaseStorage.deleted)
+        assertFalse(store.value.isPinConfigured)
     }
 
     @Test

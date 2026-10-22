@@ -7,6 +7,7 @@ import java.io.File
 import net.zetetic.database.sqlcipher.SQLiteDatabase
 import net.zetetic.database.sqlcipher.SupportHelper
 import pt.vcc.financeapp.core.security.DatabaseKeyProvider
+import pt.vcc.financeapp.core.security.DatabaseKeyUnavailableException
 
 /**
  * Abre a base de dados com SQLCipher (AES-256). A chave e a eventual conversão de uma base de
@@ -19,6 +20,11 @@ internal class EncryptedOpenHelperFactory(
     override fun create(configuration: SupportSQLiteOpenHelper.Configuration): SupportSQLiteOpenHelper =
         DeferredOpenHelper(configuration) { writeAheadLogging ->
             loadNativeLibrary()
+            configuration.name?.let { name ->
+                if (DatabaseAccess.isOrphaned(context.getDatabasePath(name), keyProvider)) {
+                    throw DatabaseKeyUnavailableException("Base de dados cifrada sem chave")
+                }
+            }
             val rawKey = SqlCipherKeys.rawKey(keyProvider.getOrCreateKey())
             configuration.name?.let { PlaintextDatabaseEncrypter.encryptIfNeeded(context.getDatabasePath(it), rawKey) }
             SupportHelper(configuration, rawKey, null, writeAheadLogging)
@@ -45,6 +51,7 @@ internal object SqlCipherKeys {
 
 /** Converte, uma única vez, a base de dados das versões anteriores (em claro) para SQLCipher. */
 internal object PlaintextDatabaseEncrypter {
+    const val TEMP_SUFFIX = ".encrypting"
     private val SQLITE_HEADER = "SQLite format 3\u0000".toByteArray(Charsets.US_ASCII)
 
     fun isPlaintext(file: File): Boolean {
@@ -56,7 +63,7 @@ internal object PlaintextDatabaseEncrypter {
 
     fun encryptIfNeeded(file: File, rawKey: ByteArray) {
         if (!isPlaintext(file)) return
-        val encrypted = File(file.parentFile, "${file.name}.encrypting")
+        val encrypted = File(file.parentFile, file.name + TEMP_SUFFIX)
         encrypted.delete()
         val flags = SQLiteDatabase.OPEN_READWRITE or SQLiteDatabase.CREATE_IF_NECESSARY
         SQLiteDatabase.openDatabase(file.path, "", null, flags, null, null).use { db ->

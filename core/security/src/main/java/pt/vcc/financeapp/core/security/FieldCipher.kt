@@ -9,6 +9,9 @@ interface FieldCipher {
 
     /** `null` se o valor não puder ser decifrado (chave perdida ou dados corrompidos). */
     fun decrypt(cipherText: String): String?
+
+    /** Apaga a chave; os valores já cifrados deixam de poder ser lidos. */
+    fun deleteKey()
 }
 
 /** [FieldCipher] com AES-GCM e uma chave própria do Keystore; o texto guardado é `v1:<Base64>`. */
@@ -23,6 +26,8 @@ internal class KeystoreFieldCipher @Inject constructor() : FieldCipher {
         val blob = runCatching { Base64.getDecoder().decode(cipherText.substring(PREFIX.length)) }.getOrNull() ?: return null
         return aes.decrypt(blob)?.toString(Charsets.UTF_8)
     }
+
+    override fun deleteKey() = aes.deleteKey()
 
     private companion object {
         const val ALIAS = "vccfinance_field_key"

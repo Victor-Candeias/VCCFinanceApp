@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import pt.vcc.financeapp.core.data.recovery.AppRecoveryManager
 import pt.vcc.financeapp.core.security.AutoLockController
 import pt.vcc.financeapp.core.security.PinManager
 import pt.vcc.financeapp.core.security.SecurityStore
@@ -17,7 +18,8 @@ import pt.vcc.financeapp.core.security.SessionState
 
 /**
  * Estado da sessão para a raiz da app decidir entre onboarding, desbloqueio e conteúdo. Mantém o
- * [AutoLockController] com o tempo de bloqueio configurado.
+ * [AutoLockController] com o tempo de bloqueio configurado. Se as chaves de segurança se tiverem
+ * perdido, a sessão começa em [SessionState.RECOVERY_REQUIRED].
  */
 @HiltViewModel
 class SessionViewModel @Inject constructor(
@@ -25,12 +27,17 @@ class SessionViewModel @Inject constructor(
     sessionManager: SessionManager,
     securityStore: SecurityStore,
     autoLockController: AutoLockController,
+    recoveryManager: AppRecoveryManager,
 ) : ViewModel() {
     val sessionState: StateFlow<SessionState> = sessionManager.state
 
     init {
         viewModelScope.launch {
-            sessionManager.initialize(pinConfigured = pinManager.isPinConfigured.first())
+            if (recoveryManager.needsRecovery()) {
+                sessionManager.requireRecovery()
+            } else {
+                sessionManager.initialize(pinConfigured = pinManager.isPinConfigured.first())
+            }
         }
         viewModelScope.launch {
             securityStore.preferences

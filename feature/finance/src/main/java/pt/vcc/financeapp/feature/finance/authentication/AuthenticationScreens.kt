@@ -21,6 +21,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,7 +41,7 @@ import pt.vcc.financeapp.feature.finance.ui.LoadingState
 
 /**
  * Mostra [content] apenas com a sessão desbloqueada; antes disso mostra o onboarding (primeiro
- * arranque) ou o ecrã de desbloqueio.
+ * arranque), o ecrã de desbloqueio ou, se as chaves se perderam, o ecrã de recuperação.
  */
 @Composable
 fun AuthenticationGate(
@@ -52,6 +55,7 @@ fun AuthenticationGate(
         SessionState.INITIALIZING -> Surface(Modifier.fillMaxSize()) { LoadingState() }
         SessionState.SETUP_REQUIRED -> SetupPinScreen()
         SessionState.LOCKED -> UnlockScreen()
+        SessionState.RECOVERY_REQUIRED -> RecoveryRequiredScreen()
         SessionState.UNLOCKED -> stateHolder.SaveableStateProvider(UNLOCKED_CONTENT_KEY) { content() }
     }
 }
@@ -119,6 +123,7 @@ internal fun UnlockScreen(viewModel: UnlockViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val activity = LocalActivity.current as? FragmentActivity
     val texts = biometricPromptTexts(R.string.biometric_unlock_subtitle)
+    var showReset by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(Unit) { viewModel.onShown() }
     LaunchedEffect(state.biometricPromptPending) {
         if (state.biometricPromptPending && activity != null) viewModel.authenticateWithBiometric(activity, texts)
@@ -143,8 +148,12 @@ internal fun UnlockScreen(viewModel: UnlockViewModel = hiltViewModel()) {
                     Text(stringResource(R.string.biometric_use))
                 }
             }
+            if (!state.isVerifying) {
+                TextButton(onClick = { showReset = true }) { Text(stringResource(R.string.reset_forgot_pin)) }
+            }
         },
     )
+    if (showReset) ResetAppDialog(onDismiss = { showReset = false })
 }
 
 @Composable

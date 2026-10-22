@@ -120,6 +120,7 @@ class UnlockViewModel @Inject constructor(
                 }
                 is PinVerification.Wrong -> _uiState.update { it.copy(remainingAttempts = result.remainingAttempts) }
                 is PinVerification.LockedOut -> startLockout(result.until)
+                PinVerification.KeyUnavailable -> sessionManager.requireRecovery()
             }
         }
     }

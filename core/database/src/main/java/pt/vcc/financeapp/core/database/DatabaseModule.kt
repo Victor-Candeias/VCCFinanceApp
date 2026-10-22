@@ -35,6 +35,8 @@ object DatabaseModule {
             .addMigrations(*VCCFinanceMigrations.ALL)
             .build()
 
+    @Provides fun databaseStorage(storage: AndroidDatabaseStorage): DatabaseStorage = storage
+
     @Provides fun accountDao(db: VCCFinanceDatabase): AccountDao = db.accountDao()
     @Provides fun transactionDao(db: VCCFinanceDatabase): TransactionDao = db.transactionDao()
     @Provides fun categoryDao(db: VCCFinanceDatabase): CategoryDao = db.categoryDao()

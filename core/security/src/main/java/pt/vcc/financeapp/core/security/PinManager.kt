@@ -21,6 +21,9 @@ sealed interface PinVerification {
 
     /** Demasiadas tentativas: não se verifica nenhum PIN até [until]. */
     data class LockedOut(val until: Instant) : PinVerification
+
+    /** A chave do Keystore do verificador desapareceu: nenhum PIN pode ser verificado (README §10, recuperação). */
+    data object KeyUnavailable : PinVerification
 }
 
 /**
@@ -72,10 +75,16 @@ class PinManager(
         return if (until > clock.millis()) Instant.ofEpochMilli(until) else null
     }
 
+    /** `false` se houver PIN mas a chave do Keystore usada no verificador já não existir. */
+    suspend fun isPinKeyAvailable(): Boolean =
+        !store.current().isPinConfigured || withContext(dispatcher) { pepper.apply(ByteArray(1)) != null }
+
     suspend fun verifyPin(pin: CharArray): PinVerification {
         lockoutEnd()?.let { return PinVerification.LockedOut(it) }
         val prefs = store.current()
         if (!prefs.isPinConfigured) return PinVerification.Wrong(remainingAttempts = 0)
+        // Sem chave não há tentativa possível; não conta como falha.
+        if (!isPinKeyAvailable()) return PinVerification.KeyUnavailable
 
         store.update { it.copy(failedAttempts = it.failedAttempts + 1) }
         val salt = decoder.decode(prefs.pinSalt)

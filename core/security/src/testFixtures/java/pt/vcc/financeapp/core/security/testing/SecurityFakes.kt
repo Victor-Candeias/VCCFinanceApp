@@ -13,6 +13,8 @@ import pt.vcc.financeapp.core.security.BiometricAuthenticator
 import pt.vcc.financeapp.core.security.BiometricAvailability
 import pt.vcc.financeapp.core.security.BiometricPromptTexts
 import pt.vcc.financeapp.core.security.BiometricResult
+import pt.vcc.financeapp.core.security.DatabaseKeyProvider
+import pt.vcc.financeapp.core.security.DatabaseKeyUnavailableException
 import pt.vcc.financeapp.core.security.FieldCipher
 import pt.vcc.financeapp.core.security.PinPepper
 import pt.vcc.financeapp.core.security.SecurityPreferences
@@ -92,4 +94,27 @@ class FakeFieldCipher : FieldCipher {
 
     override fun decrypt(cipherText: String): String? =
         if (failDecrypt || !cipherText.startsWith("enc:")) null else cipherText.removePrefix("enc:").reversed()
+
+    override fun deleteKey() {
+        failDecrypt = true
+    }
+}
+
+/** [DatabaseKeyProvider] em memória; [usable] simula uma chave do Keystore perdida. */
+class FakeDatabaseKeyProvider(var hasKey: Boolean = true, var usable: Boolean = true) : DatabaseKeyProvider {
+    override fun hasKey(): Boolean = hasKey
+
+    override fun getOrCreateKey(): ByteArray {
+        if (hasKey && !usable) throw DatabaseKeyUnavailableException("fake")
+        hasKey = true
+        usable = true
+        return ByteArray(32) { it.toByte() }
+    }
+
+    override fun isKeyUsable(): Boolean = hasKey && usable
+
+    override fun deleteKey() {
+        hasKey = false
+        usable = true
+    }
 }

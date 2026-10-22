@@ -14,6 +14,9 @@ enum class SessionState {
     SETUP_REQUIRED,
     LOCKED,
     UNLOCKED,
+
+    /** Chaves de segurança perdidas: os dados não podem ser lidos e só resta apagá-los. */
+    RECOVERY_REQUIRED,
 }
 
 /** Estado da sessão da app; os dados financeiros só são mostrados em [SessionState.UNLOCKED]. */
@@ -31,7 +34,11 @@ class SessionManager @Inject constructor() {
     }
 
     fun unlock() {
-        _state.value = SessionState.UNLOCKED
+        if (_state.value != SessionState.RECOVERY_REQUIRED) _state.value = SessionState.UNLOCKED
+    }
+
+    fun requireRecovery() {
+        _state.value = SessionState.RECOVERY_REQUIRED
     }
 
     fun lock() {

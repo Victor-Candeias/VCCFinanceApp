@@ -188,5 +188,16 @@
     <string name="account_iban_hint">Guardado cifrado neste dispositivo.</string>
     <string name="account_iban_show">Mostrar</string>
     <string name="account_error_invalid_iban">IBAN inválido. Confirma os caracteres.</string>
-    <string name="account_iban_unreadable">Não foi possível ler o IBAN guardado. Fica guardado enquanto não alterares este campo.</string></resources>
+    <string name="account_iban_unreadable">Não foi possível ler o IBAN guardado. Fica guardado enquanto não alterares este campo.</string>
 
+    <!-- Recuperação (S4-05) -->
+    <string name="reset_forgot_pin">Esqueci-me do PIN</string>
+    <string name="recovery_title">Não é possível aceder aos dados</string>
+    <string name="recovery_message">As chaves de segurança deste dispositivo foram removidas (por exemplo, depois de limpar as credenciais do sistema). Sem elas, o PIN e os dados guardados não podem ser lidos.</string>
+    <string name="recovery_erase">Apagar dados e recomeçar</string>
+    <string name="reset_dialog_title">Apagar todos os dados?</string>
+    <string name="reset_dialog_message">Todas as contas, movimentos e definições deste dispositivo são apagados de forma permanente e vais criar um PIN novo. Não é possível anular.</string>
+    <string name="reset_dialog_prompt">Escreve %1$s para confirmar</string>
+    <string name="reset_dialog_confirm">Apagar tudo</string>
+    <string name="reset_dialog_failed">Não foi possível apagar os dados. Tenta novamente.</string>
+</resources>

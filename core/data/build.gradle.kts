@@ -45,4 +45,5 @@ dependencies {
     testImplementation(testFixtures(project(":core:security")))
 
     testFixturesImplementation(libs.kotlinx.coroutines.core)
+    testFixturesApi(project(":core:database"))
 }
