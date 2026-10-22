@@ -4,8 +4,10 @@ import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
@@ -23,6 +25,7 @@ import pt.vcc.financeapp.core.data.importer.DocumentReader
 import pt.vcc.financeapp.core.data.importer.ImportDocument
 import pt.vcc.financeapp.core.data.importer.ImportParseException
 import pt.vcc.financeapp.core.data.importer.ReadImportFileUseCase
+import pt.vcc.financeapp.core.data.importer.RevertImportUseCase
 import pt.vcc.financeapp.core.data.importer.ReviewImportUseCase
 import pt.vcc.financeapp.core.data.testing.FakeAccountRepository
 import pt.vcc.financeapp.core.data.testing.FakeImportBatchRepository
@@ -32,6 +35,7 @@ import pt.vcc.financeapp.core.model.Account
 import pt.vcc.financeapp.core.model.AccountType
 import pt.vcc.financeapp.core.model.ColumnMapping
 import pt.vcc.financeapp.core.model.ImportFormat
+import pt.vcc.financeapp.core.model.ImportStatus
 import pt.vcc.financeapp.core.model.Money
 import pt.vcc.financeapp.core.model.Transaction
 import pt.vcc.financeapp.core.model.TransactionSource
@@ -56,7 +60,9 @@ class ImportViewModelTest {
             profiles,
             accounts,
             ReviewImportUseCase(transactions, batches, clock, dispatcher),
-            CommitImportUseCase(accounts, batches, clock),
+            CommitImportUseCase(accounts, transactions, batches, clock),
+            RevertImportUseCase(batches),
+            batches,
             clock,
             dispatcher,
         )
@@ -176,12 +182,13 @@ class ImportViewModelTest {
         viewModel.confirmImport()
         state = viewModel.uiState.value
         assertEquals(ImportStep.DONE, state.step)
-        assertEquals(1, state.result?.importedRows)
-        assertEquals(1, state.result?.duplicateRows)
+        assertEquals(1, state.result?.batch?.importedRows)
+        assertEquals(1, state.result?.batch?.duplicateRows)
         val imported = transactions.transactions.value.single { it.id != manual.id }
         assertEquals(TransactionType.INCOME, imported.type)
         assertEquals(Money(200_000, "EUR"), imported.amount)
-        assertEquals(state.result?.id, imported.importBatchId)
+        assertEquals(state.result?.batch?.id, imported.importBatchId)
+        assertNull(state.result?.reconciliation)
 
         // O mesmo ficheiro outra vez: aviso e a linha importada aparece como duplicada.
         viewModel.onFileSelected("content://cgd")
@@ -190,5 +197,18 @@ class ImportViewModelTest {
         assertNotNull(state.review?.previousImport)
         assertEquals(listOf(CandidateStatus.POSSIBLE_DUPLICATE, CandidateStatus.DUPLICATE), state.review?.candidates?.map { it.status })
         assertTrue(state.selectedRows.isEmpty())
+
+        // Histórico com o nome da conta; reverter apaga só os movimentos importados.
+        val collector = CoroutineScope(dispatcher).launch { viewModel.history.collect {} }
+        val item = viewModel.history.value.single()
+        assertEquals("CGD", item.accountName)
+        viewModel.revertBatch(item.batch.id)
+        assertEquals(ImportStatus.REVERTED, viewModel.history.value.single().batch.status)
+        assertEquals(listOf(manual.id), transactions.transactions.value.map { it.id })
+        assertNull(viewModel.uiState.value.revertingId)
+        assertFalse(viewModel.uiState.value.revertFailed)
+        viewModel.revertBatch(item.batch.id)
+        assertTrue(viewModel.uiState.value.revertFailed)
+        collector.cancel()
     }
 }

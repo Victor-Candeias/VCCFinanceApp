@@ -23,14 +23,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import pt.vcc.financeapp.core.data.importer.CandidateStatus
 import pt.vcc.financeapp.core.data.importer.ImportCandidate
+import pt.vcc.financeapp.core.data.importer.ImportReconciliation
+import pt.vcc.financeapp.core.data.importer.ImportResult
 import pt.vcc.financeapp.core.data.importer.ImportReview
 import pt.vcc.financeapp.core.data.importer.RowError
 import pt.vcc.financeapp.core.model.Account
-import pt.vcc.financeapp.core.model.ImportBatch
 import pt.vcc.financeapp.core.model.Money
 import pt.vcc.financeapp.core.model.TransactionType
 import pt.vcc.financeapp.feature.finance.R
@@ -177,7 +179,8 @@ private fun statusText(candidate: ImportCandidate): Pair<String, Boolean>? = whe
 
 /** Resultado da gravação. */
 @Composable
-internal fun ImportDoneCard(batch: ImportBatch, onAnother: () -> Unit, onClose: () -> Unit) {
+internal fun ImportDoneCard(result: ImportResult, onAnother: () -> Unit, onClose: () -> Unit) {
+    val batch = result.batch
     Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(stringResource(R.string.import_done_title), style = MaterialTheme.typography.titleMedium)
@@ -190,8 +193,28 @@ internal fun ImportDoneCard(batch: ImportBatch, onAnother: () -> Unit, onClose: 
             }
         }
     }
+    result.reconciliation?.let { ReconciliationCard(it) }
     Button(onClick = onClose, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.import_done_close)) }
     OutlinedButton(onClick = onAnother, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.import_done_another)) }
+}
+
+/** Saldo final do extrato contra o saldo calculado pela app no mesmo dia. */
+@Composable
+private fun ReconciliationCard(reconciliation: ImportReconciliation) {
+    val container = if (reconciliation.isReconciled) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.errorContainer
+    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = container)) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(stringResource(R.string.import_reconciliation_title, reconciliation.date.formatted()), style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.import_reconciliation_statement, reconciliation.statementBalance.formatted()))
+            Text(stringResource(R.string.import_reconciliation_app, reconciliation.appBalance.formatted()))
+            if (reconciliation.isReconciled) {
+                Text(stringResource(R.string.import_reconciliation_ok), fontWeight = FontWeight.Bold)
+            } else {
+                Text(stringResource(R.string.import_reconciliation_diff, reconciliation.difference.formatted()), fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.import_reconciliation_hint), style = MaterialTheme.typography.bodySmall)
+            }
+        }
+    }
 }
 
 internal fun RowError.messageRes(): Int = when (this) {

@@ -19,5 +19,5 @@ owner: developer
 | S5-01 | Importação CSV e XLSX | done | 2026-10-19 |  | medium | 2026-10-22 |  | sprint-4/S4-05 |  |
 | S5-02 | Mapeamento de colunas e perfis por banco | done | 2026-10-19 |  | medium | 2026-10-22 |  |  |  |
 | S5-03 | Pré-visualização, validação e deduplicação de importações | done | 2026-10-19 |  | medium | 2026-10-22 |  |  |  |
-| S5-04 | Histórico de importações e reconciliação | backlog | 2026-10-19 |  | medium |  |  |  |  |
+| S5-04 | Histórico de importações e reconciliação | done | 2026-10-19 |  | medium | 2026-10-22 |  |  |  |
 <!-- /maestru:work-items-list -->

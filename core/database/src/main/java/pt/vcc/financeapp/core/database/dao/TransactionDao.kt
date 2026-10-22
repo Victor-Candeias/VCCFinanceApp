@@ -83,6 +83,19 @@ interface TransactionDao {
         """,
     )
     fun observeNetMovement(accountId: String): Flow<Long>
+
+    /** Como [observeNetMovement], mas só com movimentos anteriores a [toExclusive] (reconciliação de extratos). */
+    @Query(
+        """
+        SELECT COALESCE(SUM(CASE
+            WHEN type = 'INCOME' THEN amountMinor
+            WHEN type = 'EXPENSE' THEN -amountMinor
+            ELSE 0 END), 0)
+        FROM transactions
+        WHERE accountId = :accountId AND status = 'BOOKED' AND bookingDate < :toExclusive
+        """,
+    )
+    suspend fun netMovementUntil(accountId: String, toExclusive: Long): Long
     /**
      * Totais por conta, tipo, estado e moeda: a base do saldo de todas as contas numa só consulta.
      * O saldo final é calculado por `AccountBalanceCalculator` (README §6).

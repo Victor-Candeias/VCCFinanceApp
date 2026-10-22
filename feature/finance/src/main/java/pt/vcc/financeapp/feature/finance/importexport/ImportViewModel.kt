@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -23,6 +24,7 @@ import pt.vcc.financeapp.core.data.importer.CandidateStatus
 import pt.vcc.financeapp.core.data.importer.ColumnMappingDetector
 import pt.vcc.financeapp.core.data.importer.CommitImportUseCase
 import pt.vcc.financeapp.core.data.importer.ImportCommitRequest
+import pt.vcc.financeapp.core.data.importer.ImportResult
 import pt.vcc.financeapp.core.data.importer.ImportFile
 import pt.vcc.financeapp.core.data.importer.ImportParseException
 import pt.vcc.financeapp.core.data.importer.ImportRowParser
@@ -30,8 +32,10 @@ import pt.vcc.financeapp.core.data.importer.ImportTable
 import pt.vcc.financeapp.core.data.importer.ParsedImportRow
 import pt.vcc.financeapp.core.data.importer.ImportReview
 import pt.vcc.financeapp.core.data.importer.ReadImportFileUseCase
+import pt.vcc.financeapp.core.data.importer.RevertImportUseCase
 import pt.vcc.financeapp.core.data.importer.ReviewImportUseCase
 import pt.vcc.financeapp.core.data.repository.AccountRepository
+import pt.vcc.financeapp.core.data.repository.ImportBatchRepository
 import pt.vcc.financeapp.core.data.repository.ImportProfileRepository
 import pt.vcc.financeapp.core.model.Account
 import pt.vcc.financeapp.core.model.ColumnMapping
@@ -40,6 +44,9 @@ import pt.vcc.financeapp.core.model.ImportProfile
 import pt.vcc.financeapp.core.model.currencyFractionDigits
 
 enum class ImportStep { MAPPING, REVIEW, DONE }
+
+/** Entrada do histórico de importações com o nome da conta (vazio se a conta já não existir). */
+data class ImportHistoryItem(val batch: ImportBatch, val accountName: String)
 
 data class ImportUiState(
     val isReading: Boolean = false,
@@ -62,7 +69,10 @@ data class ImportUiState(
     val selectedRows: Set<Int> = emptySet(),
     val isWorking: Boolean = false,
     val commitFailed: Boolean = false,
-    val result: ImportBatch? = null,
+    val result: ImportResult? = null,
+    /** Importação a ser revertida a partir do histórico. */
+    val revertingId: String? = null,
+    val revertFailed: Boolean = false,
 ) {
     val validRows: Int get() = parsedRows.count { it.isValid }
     val invalidRows: Int get() = parsedRows.size - validRows
@@ -77,6 +87,8 @@ class ImportViewModel internal constructor(
     private val accountRepository: AccountRepository,
     private val reviewImport: ReviewImportUseCase,
     private val commitImport: CommitImportUseCase,
+    private val revertImport: RevertImportUseCase,
+    importBatchRepository: ImportBatchRepository,
     private val clock: Clock,
     private val computeDispatcher: CoroutineDispatcher,
 ) : ViewModel() {
@@ -87,8 +99,20 @@ class ImportViewModel internal constructor(
         accountRepository: AccountRepository,
         reviewImport: ReviewImportUseCase,
         commitImport: CommitImportUseCase,
+        revertImport: RevertImportUseCase,
+        importBatchRepository: ImportBatchRepository,
         clock: Clock,
-    ) : this(readImportFile, profileRepository, accountRepository, reviewImport, commitImport, clock, Dispatchers.Default)
+    ) : this(
+        readImportFile,
+        profileRepository,
+        accountRepository,
+        reviewImport,
+        commitImport,
+        revertImport,
+        importBatchRepository,
+        clock,
+        Dispatchers.Default,
+    )
 
     private val _uiState = MutableStateFlow(ImportUiState())
     val uiState: StateFlow<ImportUiState> = _uiState.asStateFlow()
@@ -96,6 +120,11 @@ class ImportViewModel internal constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     val accounts: StateFlow<List<Account>> = accountRepository.observeActiveAccounts()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val history: StateFlow<List<ImportHistoryItem>> =
+        combine(importBatchRepository.observeAll(), accountRepository.observeAllAccounts()) { batches, accounts ->
+            val names = accounts.associate { it.id to it.name }
+            batches.map { ImportHistoryItem(it, names[it.accountId].orEmpty()) }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     private var readJob: Job? = null
     private var parseJob: Job? = null
 
@@ -249,7 +278,7 @@ class ImportViewModel internal constructor(
                 candidates = review.candidates,
                 selectedRows = state.selectedRows,
             )
-            val batch = try {
+            val result = try {
                 commitImport(request)
             } catch (e: CancellationException) {
                 throw e
@@ -257,15 +286,31 @@ class ImportViewModel internal constructor(
                 null
             }
             _uiState.update {
-                if (batch == null) it.copy(isWorking = false, commitFailed = true) else it.copy(isWorking = false, step = ImportStep.DONE, result = batch)
+                if (result == null) it.copy(isWorking = false, commitFailed = true) else it.copy(isWorking = false, step = ImportStep.DONE, result = result)
             }
+        }
+    }
+
+    /** Apaga os movimentos e o saldo de uma importação concluída e marca-a como revertida. */
+    fun revertBatch(id: String) {
+        if (_uiState.value.revertingId != null) return
+        _uiState.update { it.copy(revertingId = id, revertFailed = false) }
+        viewModelScope.launch {
+            val deleted = try {
+                revertImport(id)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                null
+            }
+            _uiState.update { it.copy(revertingId = null, revertFailed = deleted == null) }
         }
     }
 
     fun clear() {
         readJob?.cancel()
         parseJob?.cancel()
-        _uiState.value = ImportUiState()
+        _uiState.value = ImportUiState(accountId = _uiState.value.accountId)
     }
 
     private suspend fun findProfile(table: ImportTable): ImportProfile? {

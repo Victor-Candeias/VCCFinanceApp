@@ -53,6 +53,7 @@ fun ImportScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val profiles by viewModel.profiles.collectAsStateWithLifecycle()
     val accounts by viewModel.accounts.collectAsStateWithLifecycle()
+    val history by viewModel.history.collectAsStateWithLifecycle()
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) viewModel.onFileSelected(uri.toString())
     }
@@ -153,7 +154,10 @@ fun ImportScreen(
                     }
                     ImportPreview(file)
                 }
-                else -> SavedProfiles(profiles, onDelete = viewModel::deleteProfile)
+                else -> {
+                    ImportHistorySection(history, state.revertingId, state.revertFailed, onRevert = viewModel::revertBatch)
+                    SavedProfiles(profiles, onDelete = viewModel::deleteProfile)
+                }
             }
         }
     }

@@ -1,6 +1,7 @@
 package pt.vcc.financeapp.core.data.importer
 
 import java.time.Clock
+import java.time.LocalDate
 import java.time.LocalTime
 import java.util.UUID
 import javax.inject.Inject
@@ -11,6 +12,8 @@ import pt.vcc.financeapp.core.data.repository.AccountRepository
 import pt.vcc.financeapp.core.data.repository.ImportBatchRepository
 import pt.vcc.financeapp.core.data.repository.TransactionRepository
 import pt.vcc.financeapp.core.data.usecase.SaveTransactionUseCase
+import pt.vcc.financeapp.core.model.AccountBalanceSnapshot
+import pt.vcc.financeapp.core.model.BalanceSource
 import pt.vcc.financeapp.core.model.ImportBatch
 import pt.vcc.financeapp.core.model.ImportFormat
 import pt.vcc.financeapp.core.model.ImportStatus
@@ -73,13 +76,33 @@ data class ImportCommitRequest(
     val selectedRows: Set<Int>,
 )
 
-/** Grava o lote de importação e os movimentos escolhidos numa única transação. */
+/** Saldo final do extrato comparado com o saldo calculado pela app no fim do mesmo dia. */
+data class ImportReconciliation(
+    val date: LocalDate,
+    val statementBalance: Money,
+    val appBalance: Money,
+) {
+    val difference: Money get() = statementBalance - appBalance
+    val isReconciled: Boolean get() = difference.amountMinor == 0L
+}
+
+data class ImportResult(
+    val batch: ImportBatch,
+    /** `null` quando o ficheiro não tem coluna de saldo mapeada. */
+    val reconciliation: ImportReconciliation?,
+)
+
+/**
+ * Grava o lote de importação, os movimentos escolhidos e o saldo final do extrato numa única transação e
+ * reconcilia esse saldo com o calculado pela app.
+ */
 class CommitImportUseCase @Inject constructor(
     private val accountRepository: AccountRepository,
+    private val transactionRepository: TransactionRepository,
     private val importBatchRepository: ImportBatchRepository,
     private val clock: Clock,
 ) {
-    suspend operator fun invoke(request: ImportCommitRequest): ImportBatch {
+    suspend operator fun invoke(request: ImportCommitRequest): ImportResult {
         val account = accountRepository.getById(request.accountId)
         require(account != null && account.isActive) { "Conta inexistente ou inativa" }
         val now = clock.instant()
@@ -121,12 +144,43 @@ class CommitImportUseCase @Inject constructor(
             errorRows = request.candidates.count { it.status == CandidateStatus.INVALID },
             importedAt = now,
         )
-        val inserted = importBatchRepository.saveWithTransactions(batch, transactions)
-        return batch.copy(importedRows = inserted, duplicateRows = skippedDuplicates + transactions.size - inserted)
+        val closing = StatementBalance.closing(request.candidates.map { it.row })
+        val endOfClosingDay = closing?.date?.plusDays(1)?.atStartOfDay(clock.zone)?.toInstant()
+        val snapshot = if (closing != null && endOfClosingDay != null) {
+            AccountBalanceSnapshot(
+                id = UUID.randomUUID().toString(),
+                accountId = account.id,
+                balance = Money(closing.balanceMinor, account.currency),
+                referenceDate = endOfClosingDay.minusMillis(1),
+                source = BalanceSource.IMPORT,
+                createdAt = now,
+                importBatchId = batchId,
+            )
+        } else {
+            null
+        }
+        val inserted = importBatchRepository.saveWithTransactions(batch, transactions, snapshot)
+        val reconciliation = if (snapshot != null && closing != null && endOfClosingDay != null) {
+            val net = transactionRepository.netMovementUntil(account.id, endOfClosingDay)
+            ImportReconciliation(closing.date, snapshot.balance, account.openingBalance + Money(net, account.currency))
+        } else {
+            null
+        }
+        return ImportResult(
+            batch = batch.copy(importedRows = inserted, duplicateRows = skippedDuplicates + transactions.size - inserted),
+            reconciliation = reconciliation,
+        )
     }
 
     private companion object {
         /** Como nos movimentos manuais: meio-dia local, para a data não mudar com o fuso. */
         val BOOKING_TIME: LocalTime = LocalTime.NOON
     }
+}
+
+/** Desfaz uma importação concluída; devolve o número de movimentos apagados ou `null` se já não for possível. */
+class RevertImportUseCase @Inject constructor(
+    private val importBatchRepository: ImportBatchRepository,
+) {
+    suspend operator fun invoke(batchId: String): Int? = importBatchRepository.revert(batchId)
 }

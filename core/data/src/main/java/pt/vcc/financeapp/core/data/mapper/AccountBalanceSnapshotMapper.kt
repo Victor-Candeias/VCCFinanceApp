@@ -11,6 +11,7 @@ fun AccountBalanceSnapshotEntity.asDomain(): AccountBalanceSnapshot = AccountBal
     referenceDate = referenceDate.toInstant(),
     source = source,
     createdAt = createdAt.toInstant(),
+    importBatchId = importBatchId,
 )
 
 fun AccountBalanceSnapshot.asEntity(): AccountBalanceSnapshotEntity = AccountBalanceSnapshotEntity(
@@ -21,4 +22,5 @@ fun AccountBalanceSnapshot.asEntity(): AccountBalanceSnapshotEntity = AccountBal
     referenceDate = referenceDate.toEpochMilli(),
     source = source,
     createdAt = createdAt.toEpochMilli(),
+    importBatchId = importBatchId,
 )

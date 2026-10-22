@@ -4,8 +4,10 @@ import androidx.room.Room
 import androidx.room.testing.MigrationTestHelper
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -30,6 +32,12 @@ class VCCFinanceMigrationTest {
                 """
                 INSERT INTO accounts (id, name, type, currency, openingBalanceMinor, isActive, createdAt)
                 VALUES ('acc-1', 'Conta à ordem', 'BANK_ACCOUNT', 'EUR', 100000, 1, 0)
+                """,
+            )
+            db.execSQL(
+                """
+                INSERT INTO account_balance_snapshots (id, accountId, balanceMinor, currency, referenceDate, source, createdAt)
+                VALUES ('snap-1', 'acc-1', 50000, 'EUR', 1760000000000, 'MANUAL', 0)
                 """,
             )
             db.execSQL(
@@ -60,6 +68,10 @@ class VCCFinanceMigrationTest {
         )
         database.importProfileDao().upsert(profile)
         assertEquals(profile, database.importProfileDao().findBySignature("data mov|descritivo"))
+        // v3: saldos existentes ficam sem importação associada.
+        val snapshot = database.accountBalanceSnapshotDao().observeLatest("acc-1").first()
+        assertEquals(50000L, snapshot?.balanceMinor)
+        assertNull(snapshot?.importBatchId)
     }
 
     private companion object {

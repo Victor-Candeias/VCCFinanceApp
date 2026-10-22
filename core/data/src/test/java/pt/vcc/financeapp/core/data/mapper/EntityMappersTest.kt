@@ -106,6 +106,7 @@ class EntityMappersTest {
             referenceDate = 1_760_000_000_000,
             source = BalanceSource.BANK_SYNC,
             createdAt = 3,
+            importBatchId = "batch-1",
         )
 
         assertEquals(budget, budget.asDomain().asEntity())

@@ -12,6 +12,8 @@ import pt.vcc.financeapp.core.model.Account
 import pt.vcc.financeapp.core.model.Category
 import pt.vcc.financeapp.core.model.BalanceMovement
 import pt.vcc.financeapp.core.model.Transaction
+import pt.vcc.financeapp.core.model.TransactionStatus
+import pt.vcc.financeapp.core.model.TransactionType
 import pt.vcc.financeapp.core.model.asBalanceMovement
 
 class FakeAccountRepository(initial: List<Account> = emptyList()) : AccountRepository {
@@ -61,6 +63,16 @@ class FakeTransactionRepository(initial: List<Transaction> = emptyList()) : Tran
     override suspend fun countByAccount(accountId: String): Int = transactions.value.count { it.accountId == accountId }
     override suspend fun getByAccountInPeriod(accountId: String, fromInclusive: Instant, toExclusive: Instant): List<Transaction> =
         transactions.value.filter { it.accountId == accountId && it.bookingDate >= fromInclusive && it.bookingDate < toExclusive }
+    override suspend fun netMovementUntil(accountId: String, toExclusive: Instant): Long =
+        transactions.value
+            .filter { it.accountId == accountId && it.status == TransactionStatus.BOOKED && it.bookingDate < toExclusive }
+            .sumOf {
+                when (it.type) {
+                    TransactionType.INCOME -> it.amount.amountMinor
+                    TransactionType.EXPENSE -> -it.amount.amountMinor
+                    TransactionType.TRANSFER -> 0L
+                }
+            }
     override suspend fun create(transaction: Transaction) = transactions.update { it + transaction }
     override suspend fun update(transaction: Transaction) =
         transactions.update { list -> list.map { if (it.id == transaction.id) transaction else it } }

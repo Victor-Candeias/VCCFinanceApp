@@ -19,6 +19,9 @@ interface TransactionRepository {
 
     /** Movimentos de uma conta com `bookingDate` em `[fromInclusive, toExclusive)`. */
     suspend fun getByAccountInPeriod(accountId: String, fromInclusive: Instant, toExclusive: Instant): List<Transaction>
+
+    /** Receitas menos despesas confirmadas da conta antes de [toExclusive], sem o saldo inicial. */
+    suspend fun netMovementUntil(accountId: String, toExclusive: Instant): Long
     suspend fun create(transaction: Transaction)
     suspend fun update(transaction: Transaction)
     suspend fun delete(transaction: Transaction)

@@ -29,5 +29,16 @@ object VCCFinanceMigrations {
         }
     }
 
-    val ALL: Array<Migration> = arrayOf(MIGRATION_1_2)
+    /** 2 → 3: saldo final do extrato ligado à importação, para ser removido ao reverter (S5-04). */
+    val MIGRATION_2_3: Migration = object : Migration(2, 3) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `account_balance_snapshots` ADD COLUMN `importBatchId` TEXT")
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_account_balance_snapshots_importBatchId` " +
+                    "ON `account_balance_snapshots` (`importBatchId`)",
+            )
+        }
+    }
+
+    val ALL: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3)
 }

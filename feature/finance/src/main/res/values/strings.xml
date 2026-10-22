@@ -304,4 +304,21 @@
         <item quantity="one">%d duplicado ignorado</item>
         <item quantity="other">%d duplicados ignorados</item>
     </plurals>
+    <string name="import_reconciliation_title">Saldo do extrato em %1$s</string>
+    <string name="import_reconciliation_statement">Saldo no extrato: %1$s</string>
+    <string name="import_reconciliation_app">Saldo calculado na app: %1$s</string>
+    <string name="import_reconciliation_ok">Saldos coincidem.</string>
+    <string name="import_reconciliation_diff">Diferença: %1$s</string>
+    <string name="import_reconciliation_hint">Verifique o saldo inicial da conta, movimentos em falta ou duplicados antes desta data.</string>
+    <string name="import_history_title">Importações anteriores</string>
+    <string name="import_history_summary">%1$s · %2$s</string>
+    <string name="import_history_unknown_account">Conta removida</string>
+    <string name="import_history_revert">Reverter</string>
+    <string name="import_history_reverted">Revertida</string>
+    <string name="import_history_revert_title">Reverter importação?</string>
+    <string name="import_history_revert_failed">Não foi possível reverter a importação.</string>
+    <plurals name="import_history_revert_message">
+        <item quantity="one">O %1$d movimento importado de %2$s e o saldo do extrato serão apagados, mesmo que tenha sido editado.</item>
+        <item quantity="other">Os %1$d movimentos importados de %2$s e o saldo do extrato serão apagados, mesmo que tenham sido editados.</item>
+    </plurals>
 </resources>

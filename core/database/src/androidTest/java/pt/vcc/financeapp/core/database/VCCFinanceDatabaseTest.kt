@@ -14,11 +14,13 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import pt.vcc.financeapp.core.database.dao.BalanceMovementRow
+import pt.vcc.financeapp.core.database.entity.AccountBalanceSnapshotEntity
 import pt.vcc.financeapp.core.database.entity.AccountEntity
 import pt.vcc.financeapp.core.database.entity.CategoryEntity
 import pt.vcc.financeapp.core.database.entity.ImportBatchEntity
 import pt.vcc.financeapp.core.database.entity.TransactionEntity
 import pt.vcc.financeapp.core.model.AccountType
+import pt.vcc.financeapp.core.model.BalanceSource
 import pt.vcc.financeapp.core.model.ImportFormat
 import pt.vcc.financeapp.core.model.ImportStatus
 import pt.vcc.financeapp.core.model.TransactionSource
@@ -104,6 +106,42 @@ class VCCFinanceDatabaseTest {
         assertTrue(error is SQLiteConstraintException)
         assertEquals(null, db.importBatchDao().getById("batch-2"))
         assertEquals(0, db.transactionDao().countByAccount(account.id))
+    }
+
+    @Test
+    fun revertDeletesTheBatchTransactionsAndSnapshotOnce() = runTest {
+        db.accountDao().insert(account)
+        db.transactionDao().insert(transaction("manual", externalId = null, source = TransactionSource.MANUAL))
+        val batch = ImportBatchEntity(
+            id = "batch-3",
+            accountId = account.id,
+            format = ImportFormat.CSV,
+            fileName = "extrato.csv",
+            fileSha256 = "sha3",
+            status = ImportStatus.COMPLETED,
+        )
+        val snapshot = AccountBalanceSnapshotEntity(
+            accountId = account.id,
+            balanceMinor = 5_000,
+            referenceDate = 1_760_000_000_000,
+            source = BalanceSource.IMPORT,
+            importBatchId = "batch-3",
+        )
+        db.importBatchDao().insertWithTransactions(
+            batch,
+            listOf(transaction("i1", "h:5").copy(importBatchId = "batch-3"), transaction("i2", "h:6").copy(importBatchId = "batch-3")),
+            snapshot,
+        )
+        assertEquals(snapshot, db.accountBalanceSnapshotDao().observeLatest(account.id).first())
+
+        assertEquals(2, db.importBatchDao().revert("batch-3"))
+
+        assertEquals(ImportStatus.REVERTED, db.importBatchDao().getById("batch-3")?.status)
+        assertEquals(listOf("manual"), db.transactionDao().getByAccountInPeriod(account.id, 0, Long.MAX_VALUE).map { it.id })
+        assertEquals(null, db.accountBalanceSnapshotDao().observeLatest(account.id).first())
+        assertEquals(emptyList<ImportBatchEntity>(), db.importBatchDao().findCompletedByFile(account.id, "sha3"))
+        assertEquals(null, db.importBatchDao().revert("batch-3"))
+        assertEquals(null, db.importBatchDao().revert("missing"))
     }
 
     @Test

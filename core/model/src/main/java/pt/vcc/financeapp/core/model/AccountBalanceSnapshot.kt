@@ -10,4 +10,6 @@ data class AccountBalanceSnapshot(
     val referenceDate: Instant,
     val source: BalanceSource,
     val createdAt: Instant,
+    /** Importação que trouxe este saldo (saldo final do extrato). */
+    val importBatchId: String? = null,
 )

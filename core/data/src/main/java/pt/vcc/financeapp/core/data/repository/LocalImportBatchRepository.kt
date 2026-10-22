@@ -7,6 +7,7 @@ import pt.vcc.financeapp.core.data.mapper.asDomain
 import pt.vcc.financeapp.core.data.mapper.asEntity
 import pt.vcc.financeapp.core.database.dao.ImportBatchDao
 import pt.vcc.financeapp.core.database.entity.ImportBatchEntity
+import pt.vcc.financeapp.core.model.AccountBalanceSnapshot
 import pt.vcc.financeapp.core.model.ImportBatch
 import pt.vcc.financeapp.core.model.Transaction
 
@@ -18,6 +19,8 @@ internal class LocalImportBatchRepository @Inject constructor(
     override suspend fun findCompletedByFile(accountId: String, fileSha256: String): List<ImportBatch> =
         dao.findCompletedByFile(accountId, fileSha256).map(ImportBatchEntity::asDomain)
 
-    override suspend fun saveWithTransactions(batch: ImportBatch, transactions: List<Transaction>): Int =
-        dao.insertWithTransactions(batch.asEntity(), transactions.map(Transaction::asEntity))
+    override suspend fun saveWithTransactions(batch: ImportBatch, transactions: List<Transaction>, snapshot: AccountBalanceSnapshot?): Int =
+        dao.insertWithTransactions(batch.asEntity(), transactions.map(Transaction::asEntity), snapshot?.asEntity())
+
+    override suspend fun revert(batchId: String): Int? = dao.revert(batchId)
 }
