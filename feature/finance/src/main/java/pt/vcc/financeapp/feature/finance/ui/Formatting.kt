@@ -15,6 +15,7 @@ internal val PortugueseLocale: Locale = Locale.forLanguageTag("pt-PT")
 
 private val DateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", PortugueseLocale)
 private val MonthFormatter = DateTimeFormatter.ofPattern("LLLL yyyy", PortugueseLocale)
+private val ShortMonthFormatter = DateTimeFormatter.ofPattern("LLL", PortugueseLocale)
 
 /** Formata em pt-PT (ex.: `1 234,56 €`) sem passar por Float/Double. */
 internal fun Money.formatted(): String {
@@ -43,6 +44,9 @@ internal fun Instant.toLocalDate(zone: ZoneId = ZoneId.systemDefault()): LocalDa
 internal fun LocalDate.formatted(): String = format(DateFormatter)
 
 internal fun YearMonth.formatted(): String = format(MonthFormatter).replaceFirstChar { it.titlecase(PortugueseLocale) }
+
+/** Mês abreviado para eixos de gráficos (ex.: `fev.`). */
+internal fun YearMonth.shortLabel(): String = format(ShortMonthFormatter)
 
 /** Intervalo `[início do mês, início do mês seguinte)` no fuso indicado. */
 internal fun YearMonth.toInstantRange(zone: ZoneId): Pair<Instant, Instant> =

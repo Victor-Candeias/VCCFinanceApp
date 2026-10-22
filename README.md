@@ -823,6 +823,8 @@ data class MonthlyFinancialReport(
 
 Exportações: CSV para interoperabilidade, XLSX com folhas `Movimentos`, `Contas`, `Categorias`, `Resumo`, PDF com gráficos e tabelas, JSON para backup estruturado. Usar Android Storage Access Framework para escolher destino e partilhar ficheiros. Atenção a valores sensíveis, passwords dos backups, permissões e retenção de ficheiros temporários.
 
+**Implementação (S6-01):** o Início mostra, abaixo do resumo do mês, um gráfico circular das despesas do mês por categoria principal (subcategorias somadas na principal, cinco maiores e "Outras", cor da categoria) e um gráfico de barras de receitas e despesas dos últimos 6 meses (meses sem movimentos incluídos). As agregações são funções puras em `core:model` (`FinancialAggregations`, `CategoryTotal`, `MonthTotals`) reutilizáveis nos relatórios; contam só movimentos confirmados e excluem transferências internas. Sem conversão de moedas, os gráficos usam a moeda com mais movimentos e avisam quando há outras. Cada gráfico tem descrição completa para leitores de ecrã.
+
 ## 14. Testes essenciais
 
 | Cenário | Critério de aceitação |
@@ -920,3 +922,4 @@ A primeira milestone deve produzir um **projeto Android Studio compilável** com
 | 21/10/2026 | Perfis de importação reconhecidos pelo cabeçalho normalizado (sem acentos/pontuação) e guardados com o mapeamento em colunas explícitas da tabela `import_profiles` em vez de JSON, para as migrações futuras serem SQL simples. Extratos sem cabeçalho não são reconhecidos automaticamente (o perfil aplica-se manualmente). |
 | 22/10/2026 | Deduplicação de importações: duplicados exatos por `externalId` sintético (hash da linha normalizada mais a ordem entre linhas iguais), comparado na conta independentemente da origem CSV/XLSX; possíveis duplicados só por tipo, valor e data a ±1 dia, porque os movimentos manuais raramente têm a mesma descrição do banco. Os possíveis duplicados ficam por importar até o utilizador os marcar. |
 | 22/10/2026 | Reverter uma importação apaga todos os movimentos do lote, mesmo os editados depois (a alternativa de manter os editados deixaria saldos inconsistentes com o extrato), e o saldo do extrato; o lote fica no histórico como `REVERTED`. A reconciliação compara apenas o saldo final do extrato com o calculado no fim desse dia, sem ajustar nada automaticamente. |
+| 22/10/2026 | Gráficos desenhados com `Canvas` do Compose em vez de Vico: só são precisos gráficos circulares e de barras simples, evita-se uma dependência e o mesmo desenho pode ser replicado no PDF das exportações. Valores em unidades mínimas (`Long`) até ao desenho, percentagens com aritmética inteira. |

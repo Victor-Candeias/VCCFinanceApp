@@ -124,6 +124,17 @@
     <string name="balance_total">Saldo total (%1$s)</string>
     <string name="balance_pending">Pendente: %1$s</string>
     <string name="dashboard_balances">Saldo das contas</string>
+    <string name="dashboard_expenses_by_category">Despesas do mês por categoria</string>
+    <string name="dashboard_expenses_empty">Sem despesas confirmadas este mês.</string>
+    <string name="dashboard_category_none">Sem categoria</string>
+    <string name="dashboard_category_others">Outras</string>
+    <string name="dashboard_expenses_chart_description">Gráfico de despesas por categoria: %1$s</string>
+    <string name="dashboard_monthly_chart_description">Gráfico de receitas e despesas por mês: %1$s</string>
+    <string name="dashboard_chart_currency_note">Gráficos em %1$s; movimentos noutras moedas não estão incluídos.</string>
+    <plurals name="dashboard_monthly_title">
+        <item quantity="one">Receitas e despesas do último mês</item>
+        <item quantity="other">Receitas e despesas dos últimos %d meses</item>
+    </plurals>
 
     <string name="onboarding_title">Bem-vindo ao VCC Finance</string>
     <string name="onboarding_message">Os teus dados financeiros ficam apenas neste dispositivo. Para os proteger, começa por criar um PIN de acesso à app.</string>

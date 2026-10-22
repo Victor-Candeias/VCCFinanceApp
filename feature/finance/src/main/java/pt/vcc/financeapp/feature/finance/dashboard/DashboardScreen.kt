@@ -3,10 +3,13 @@ package pt.vcc.financeapp.feature.finance.dashboard
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,9 +25,18 @@ import pt.vcc.financeapp.core.designsystem.components.EmptyState
 import pt.vcc.financeapp.feature.finance.R
 import pt.vcc.financeapp.feature.finance.transactions.TransactionRow
 import pt.vcc.financeapp.feature.finance.ui.BalanceTotalsCard
+import pt.vcc.financeapp.feature.finance.ui.ChartBarGroup
+import pt.vcc.financeapp.feature.finance.ui.ChartPalette
+import pt.vcc.financeapp.feature.finance.ui.ChartSlice
+import pt.vcc.financeapp.feature.finance.ui.DonutChart
+import pt.vcc.financeapp.feature.finance.ui.IncomeExpenseBarChart
+import pt.vcc.financeapp.feature.finance.ui.IncomeExpenseLegend
 import pt.vcc.financeapp.feature.finance.ui.LoadingState
 import pt.vcc.financeapp.feature.finance.ui.PeriodTotalsCard
 import pt.vcc.financeapp.feature.finance.ui.formatted
+import pt.vcc.financeapp.feature.finance.ui.parseHexColor
+import pt.vcc.financeapp.feature.finance.ui.percent
+import pt.vcc.financeapp.feature.finance.ui.shortLabel
 
 @Composable
 fun DashboardScreen(
@@ -59,6 +71,73 @@ fun DashboardScreen(
 }
 
 @Composable
+private fun DashboardCharts(state: DashboardUiState, modifier: Modifier) {
+    val currency = state.chartCurrency ?: return
+    Card(modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(stringResource(R.string.dashboard_expenses_by_category), style = MaterialTheme.typography.titleMedium)
+            if (state.expensesByCategory.isEmpty()) {
+                Text(
+                    stringResource(R.string.dashboard_expenses_empty),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                val noCategory = stringResource(R.string.dashboard_category_none)
+                val others = stringResource(R.string.dashboard_category_others)
+                val othersColor = MaterialTheme.colorScheme.outline
+                val slices = state.expensesByCategory.mapIndexed { index, item ->
+                    ChartSlice(
+                        label = when {
+                            item.isOthers -> others
+                            item.categoryId == null -> noCategory
+                            else -> item.name ?: noCategory
+                        },
+                        value = item.total.amountMinor,
+                        formattedValue = item.total.formatted(),
+                        color = if (item.isOthers) othersColor else parseHexColor(item.color) ?: ChartPalette[index % ChartPalette.size],
+                    )
+                }
+                val total = slices.sumOf { it.value }
+                DonutChart(
+                    slices = slices,
+                    description = stringResource(
+                        R.string.dashboard_expenses_chart_description,
+                        slices.joinToString("; ") { "${it.label} ${it.formattedValue} (${percent(it.value, total)})" },
+                    ),
+                )
+            }
+            HorizontalDivider()
+            Text(
+                pluralStringResource(R.plurals.dashboard_monthly_title, state.monthlyTotals.size, state.monthlyTotals.size),
+                style = MaterialTheme.typography.titleMedium,
+            )
+            val income = stringResource(R.string.totals_income)
+            val expenses = stringResource(R.string.totals_expenses)
+            IncomeExpenseBarChart(
+                groups = state.monthlyTotals.map {
+                    ChartBarGroup(it.month.shortLabel(), it.totals.income.amountMinor, it.totals.expenses.amountMinor)
+                },
+                description = stringResource(
+                    R.string.dashboard_monthly_chart_description,
+                    state.monthlyTotals.joinToString("; ") {
+                        "${it.month.formatted()}: $income ${it.totals.income.formatted()}, $expenses ${it.totals.expenses.formatted()}"
+                    },
+                ),
+            )
+            IncomeExpenseLegend(income, expenses)
+            if (state.chartOmitsCurrencies) {
+                Text(
+                    stringResource(R.string.dashboard_chart_currency_note, currency),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun DashboardContent(state: DashboardUiState, onAccountsClick: () -> Unit, modifier: Modifier) {
     Column(
         modifier = modifier
@@ -73,6 +152,7 @@ private fun DashboardContent(state: DashboardUiState, onAccountsClick: () -> Uni
             modifier = Modifier.padding(horizontal = 16.dp),
         )
         PeriodTotalsCard(state.monthTotals, Modifier.padding(horizontal = 16.dp))
+        DashboardCharts(state, Modifier.padding(horizontal = 16.dp))
         Text(
             text = stringResource(R.string.dashboard_balances),
             style = MaterialTheme.typography.titleMedium,
