@@ -464,4 +464,17 @@
         <item quantity="one">%1$d categoria</item>
         <item quantity="other">%1$d categorias</item>
     </plurals>
+
+    <!-- Compras (Sprint 8) -->
+    <string name="transaction_editor_purchase_readonly">Este movimento foi gerado por uma compra. Altere-o ou elimine-o em Compras.</string>
+    <string name="purchase_payment">Pagamento</string>
+    <string name="payment_method_mb">MB</string>
+    <string name="payment_method_cash">Dinheiro</string>
+    <string name="purchase_payment_account">Conta a debitar</string>
+    <string name="purchase_payment_choose_account">Escolher conta</string>
+    <string name="purchase_payment_no_bank_account">Não há contas bancárias ativas para pagar por MB.</string>
+    <string name="purchase_payment_no_cash_account">Não há nenhuma conta Dinheiro.</string>
+    <string name="purchase_payment_create_cash_account">Criar conta Dinheiro</string>
+    <string name="purchase_payment_cash_low">Saldo em dinheiro insuficiente (%1$s). A compra é registada na mesma.</string>
+    <string name="purchase_payment_account_not_allowed">A conta escolhida não corresponde à forma de pagamento.</string>
 </resources>

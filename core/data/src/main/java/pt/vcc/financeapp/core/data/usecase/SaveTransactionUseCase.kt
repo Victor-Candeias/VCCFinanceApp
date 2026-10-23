@@ -36,6 +36,8 @@ enum class TransactionValidationError {
     DESCRIPTION_TOO_LONG,
     CATEGORY_MISMATCH,
     TRANSFER_LEG,
+    /** Despesa gerada por uma compra: altera-se em Compras (S8-02). */
+    PURCHASE_LINKED,
     NOT_FOUND,
 }
 
@@ -61,6 +63,7 @@ class SaveTransactionUseCase @Inject constructor(
         val existing = input.id?.let { transactionRepository.getById(it) }
         if (input.id != null && existing == null) errors += TransactionValidationError.NOT_FOUND
         if (existing?.transferGroupId != null) errors += TransactionValidationError.TRANSFER_LEG
+        if (existing?.source == TransactionSource.PURCHASE) errors += TransactionValidationError.PURCHASE_LINKED
 
         val account = accountRepository.getById(input.accountId)
         if (account == null) {

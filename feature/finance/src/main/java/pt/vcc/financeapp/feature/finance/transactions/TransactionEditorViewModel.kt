@@ -24,6 +24,7 @@ import pt.vcc.financeapp.core.model.Account
 import pt.vcc.financeapp.core.model.AmountParser
 import pt.vcc.financeapp.core.model.Category
 import pt.vcc.financeapp.core.model.Transaction
+import pt.vcc.financeapp.core.model.TransactionSource
 import pt.vcc.financeapp.core.model.TransactionStatus
 import pt.vcc.financeapp.core.model.TransactionType
 import pt.vcc.financeapp.core.model.currencyFractionDigits
@@ -47,6 +48,8 @@ data class TransactionEditorUiState(
     val isNew: Boolean = true,
     /** Pernas de transferência só podem ser alteradas em conjunto (S3-04). */
     val isTransfer: Boolean = false,
+    /** Despesa gerada por uma compra: só se altera ou elimina em Compras (S8-02). */
+    val isPurchase: Boolean = false,
     val accounts: List<Account> = emptyList(),
     val categories: List<CategoryOption> = emptyList(),
     val accountId: String? = null,
@@ -110,6 +113,7 @@ class TransactionEditorViewModel @Inject constructor(
                 isLoading = false,
                 isNew = false,
                 isTransfer = transaction.transferGroupId != null,
+                isPurchase = transaction.source == TransactionSource.PURCHASE,
                 accounts = accounts,
                 categories = options,
                 accountId = transaction.accountId,
@@ -153,7 +157,7 @@ class TransactionEditorViewModel @Inject constructor(
 
     fun save() {
         val state = _uiState.value
-        if (state.isLoading || state.isSaving || state.isTransfer) return
+        if (state.isLoading || state.isSaving || state.isTransfer || state.isPurchase) return
         val account = state.selectedAccount
         if (account == null) {
             _uiState.update { it.copy(errors = it.errors + TransactionEditorError.NO_ACCOUNT) }
@@ -191,7 +195,7 @@ class TransactionEditorViewModel @Inject constructor(
 
     fun delete() {
         val transaction = existing ?: return
-        if (transaction.transferGroupId != null) return
+        if (transaction.transferGroupId != null || transaction.source == TransactionSource.PURCHASE) return
         viewModelScope.launch {
             transactionRepository.delete(transaction)
             _uiState.update { it.copy(isFinished = true) }
@@ -206,8 +210,11 @@ class TransactionEditorViewModel @Inject constructor(
         TransactionValidationError.DESCRIPTION_TOO_LONG -> TransactionEditorError.DESCRIPTION_TOO_LONG
         TransactionValidationError.CATEGORY_MISMATCH -> TransactionEditorError.CATEGORY_MISMATCH
         TransactionValidationError.NOT_FOUND -> TransactionEditorError.NOT_FOUND
-        // O formulário só oferece receitas/despesas e bloqueia transferências antes de guardar.
-        TransactionValidationError.UNSUPPORTED_TYPE, TransactionValidationError.TRANSFER_LEG -> null
+        // O formulário só oferece receitas/despesas e bloqueia transferências e compras antes de guardar.
+        TransactionValidationError.UNSUPPORTED_TYPE,
+        TransactionValidationError.TRANSFER_LEG,
+        TransactionValidationError.PURCHASE_LINKED,
+        -> null
     }
 
     companion object {

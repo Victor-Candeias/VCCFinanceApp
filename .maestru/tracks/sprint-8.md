@@ -17,7 +17,7 @@ status: draft
 | ID | Title | Status | Created | Owner | Priority | Completed | Template | Blocked By | Spec |
 |---|---|---|---|---|---|---|---|---|---|
 | S8-01 | Modelo de domínio e Room das Compras (migração 4→5) | done | 2026-10-23 |  | high | 2026-10-23 |  |  |  |
-| S8-02 | Pagamento MB/Dinheiro e integração atómica com Movimentos | backlog | 2026-10-23 |  | high |  |  | sprint-8/S8-01 |  |
+| S8-02 | Pagamento MB/Dinheiro e integração atómica com Movimentos | done | 2026-10-23 |  | high | 2026-10-23 |  | sprint-8/S8-01 |  |
 | S8-03 | Hub de Compras, navegação, estabelecimentos e catálogo de produtos | backlog | 2026-10-23 |  | high |  |  | sprint-8/S8-01 |  |
 | S8-04 | Compra rápida (calculadora): itens, quantidades, descontos, orçamento e conclusão com pagamento | backlog | 2026-10-23 |  | high |  |  | sprint-8/S8-02, sprint-8/S8-03 |  |
 | S8-05 | Listas planeadas e compra a partir de lista | backlog | 2026-10-23 |  | medium |  |  | sprint-8/S8-04 |  |

@@ -75,7 +75,7 @@ fun TransactionEditorScreen(
                     }
                 },
                 actions = {
-                    if (!state.isNew && !state.isTransfer && !state.isLoading) {
+                    if (!state.isNew && !state.isTransfer && !state.isPurchase && !state.isLoading) {
                         IconButton(onClick = { confirmDelete = true }) {
                             Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.action_delete))
                         }
@@ -90,6 +90,8 @@ fun TransactionEditorScreen(
                 Text(stringResource(R.string.transaction_editor_not_found), Modifier.padding(padding).padding(16.dp))
             state.isTransfer ->
                 Text(stringResource(R.string.transaction_editor_transfer_readonly), Modifier.padding(padding).padding(16.dp))
+            state.isPurchase ->
+                Text(stringResource(R.string.transaction_editor_purchase_readonly), Modifier.padding(padding).padding(16.dp))
             state.accounts.isEmpty() ->
                 Text(stringResource(R.string.transaction_editor_no_accounts), Modifier.padding(padding).padding(16.dp))
             else -> TransactionForm(state, viewModel, Modifier.padding(padding))
