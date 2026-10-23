@@ -120,6 +120,19 @@
     <string name="transfer_delete_title">Apagar transferência?</string>
     <string name="transfer_delete_message">As duas pernas da transferência são removidas e os saldos das contas são recalculados.</string>
 
+    <!-- Levantamentos e conta por omissão (S3-06) -->
+    <string name="transaction_add_withdrawal">Levantamento</string>
+    <string name="withdrawal_editor_new_title">Novo levantamento</string>
+    <string name="withdrawal_default_description">Levantamento</string>
+    <string name="withdrawal_field_to">Conta de dinheiro</string>
+    <string name="withdrawal_need_cash_account">Cria uma conta do tipo Dinheiro para registar levantamentos.</string>
+    <string name="withdrawal_need_source_account">Precisas de uma conta ativa que não seja de Dinheiro para registar um levantamento.</string>
+    <string name="withdrawal_hint_totals">O levantamento passa o valor da conta de origem para o dinheiro, sem contar como receita nem como despesa.</string>
+    <string name="account_field_default">Conta por omissão</string>
+    <string name="account_default_hint">Fica pré-selecionada ao criar receitas e despesas.</string>
+    <string name="account_default_inactive_hint">Uma conta desativada não pode ser a conta por omissão.</string>
+    <string name="account_default_badge">Por omissão</string>
+
     <string name="balance_total">Saldo total (%1$s)</string>
     <string name="balance_pending">Pendente: %1$s</string>
     <string name="dashboard_balances">Saldo das contas</string>

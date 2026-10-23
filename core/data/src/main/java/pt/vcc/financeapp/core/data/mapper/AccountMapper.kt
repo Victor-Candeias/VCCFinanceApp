@@ -13,6 +13,7 @@ fun AccountEntity.asDomain(): Account = Account(
     ibanEncrypted = ibanEncrypted,
     connectionId = connectionId,
     isActive = isActive,
+    isDefault = isDefault,
     createdAt = createdAt.toInstant(),
 )
 
@@ -26,5 +27,6 @@ fun Account.asEntity(): AccountEntity = AccountEntity(
     openingBalanceMinor = openingBalance.amountMinor,
     connectionId = connectionId,
     isActive = isActive,
+    isDefault = isDefault,
     createdAt = createdAt.toEpochMilli(),
 )

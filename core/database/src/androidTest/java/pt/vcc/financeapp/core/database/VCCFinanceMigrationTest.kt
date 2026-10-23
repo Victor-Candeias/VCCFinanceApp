@@ -72,6 +72,8 @@ class VCCFinanceMigrationTest {
         val snapshot = database.accountBalanceSnapshotDao().observeLatest("acc-1").first()
         assertEquals(50000L, snapshot?.balanceMinor)
         assertNull(snapshot?.importBatchId)
+        // v4: contas existentes não ficam marcadas como conta por omissão.
+        assertEquals(false, database.accountDao().getById("acc-1")?.isDefault)
     }
 
     private companion object {

@@ -21,4 +21,5 @@ owner: developer
 | S3-03 | Criar receitas e despesas | done | 2026-10-19 |  | high | 2026-10-21 |  |  |  |
 | S3-04 | Implementar transferências internas atómicas | done | 2026-10-19 |  | high | 2026-10-21 |  |  |  |
 | S3-05 | Validar cálculo de saldos | done | 2026-10-19 |  | high | 2026-10-21 |  |  |  |
+| S3-06 | Conta Dinheiro, levantamentos e conta por omissão nas transações | done | 2026-10-23 |  | medium | 2026-10-23 |  |  | [S3-06](../specs/sprint-3/s3-06-spec.md) |
 <!-- /maestru:work-items-list -->

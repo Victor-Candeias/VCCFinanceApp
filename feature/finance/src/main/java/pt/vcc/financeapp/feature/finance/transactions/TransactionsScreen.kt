@@ -36,6 +36,7 @@ import pt.vcc.financeapp.feature.finance.ui.PeriodTotalsCard
 fun TransactionsScreen(
     onAddTransaction: () -> Unit,
     onAddTransfer: () -> Unit,
+    onAddWithdrawal: () -> Unit,
     onTransactionClick: (Transaction) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: TransactionsViewModel = hiltViewModel(),
@@ -83,6 +84,10 @@ fun TransactionsScreen(
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.transaction_add_transfer)) },
                     onClick = { showAddMenu = false; onAddTransfer() },
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.transaction_add_withdrawal)) },
+                    onClick = { showAddMenu = false; onAddWithdrawal() },
                 )
             }
         }

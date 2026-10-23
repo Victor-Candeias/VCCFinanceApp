@@ -19,9 +19,12 @@ data object TransactionsRoute
 @Serializable
 data class TransactionEditorRoute(val transactionId: String? = null)
 
-/** Editor de transferência interna; [transferGroupId] nulo cria uma transferência nova. */
+/**
+ * Editor de transferência interna; [transferGroupId] nulo cria uma transferência nova.
+ * [withdrawal] abre uma transferência nova em modo levantamento (destino: conta Dinheiro).
+ */
 @Serializable
-data class TransferEditorRoute(val transferGroupId: String? = null)
+data class TransferEditorRoute(val transferGroupId: String? = null, val withdrawal: Boolean = false)
 
 @Serializable
 data object ReportsRoute

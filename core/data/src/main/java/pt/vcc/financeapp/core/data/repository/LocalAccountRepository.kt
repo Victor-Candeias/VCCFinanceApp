@@ -29,4 +29,8 @@ internal class LocalAccountRepository @Inject constructor(
     override suspend fun deactivate(id: String) = dao.deactivate(id)
 
     override suspend fun reactivate(id: String) = dao.reactivate(id)
+
+    override suspend fun setDefault(id: String) = dao.setDefault(id)
+
+    override suspend fun clearDefault(id: String) = dao.clearDefault(id)
 }

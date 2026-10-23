@@ -102,7 +102,7 @@ class TransactionEditorViewModel @Inject constructor(
                 isLoading = false,
                 accounts = accounts,
                 categories = options,
-                accountId = accounts.firstOrNull()?.id,
+                accountId = (accounts.firstOrNull { it.isDefault && it.isActive } ?: accounts.firstOrNull())?.id,
                 date = LocalDate.now(clock),
             )
         } else {

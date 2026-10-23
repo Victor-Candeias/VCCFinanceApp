@@ -55,8 +55,10 @@ fun TransferEditorScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
+    val withdrawalDescription = stringResource(R.string.withdrawal_default_description)
 
     LaunchedEffect(state.isFinished) { if (state.isFinished) onBack() }
+    LaunchedEffect(state.isLoading) { if (!state.isLoading) viewModel.prefillWithdrawalDescription(withdrawalDescription) }
 
     Scaffold(
         modifier = modifier,
@@ -65,7 +67,15 @@ fun TransferEditorScreen(
             TopAppBar(
                 windowInsets = WindowInsets(0),
                 title = {
-                    Text(stringResource(if (state.isNew) R.string.transfer_editor_new_title else R.string.transfer_editor_edit_title))
+                    Text(
+                        stringResource(
+                            when {
+                                state.isWithdrawal -> R.string.withdrawal_editor_new_title
+                                state.isNew -> R.string.transfer_editor_new_title
+                                else -> R.string.transfer_editor_edit_title
+                            },
+                        ),
+                    )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
@@ -86,6 +96,10 @@ fun TransferEditorScreen(
             state.isLoading -> LoadingState(Modifier.padding(padding))
             TransferEditorError.NOT_FOUND in state.errors ->
                 Text(stringResource(R.string.transfer_editor_not_found), Modifier.padding(padding).padding(16.dp))
+            state.isWithdrawal && state.toOptions.isEmpty() ->
+                Text(stringResource(R.string.withdrawal_need_cash_account), Modifier.padding(padding).padding(16.dp))
+            state.isWithdrawal && state.fromOptions.isEmpty() ->
+                Text(stringResource(R.string.withdrawal_need_source_account), Modifier.padding(padding).padding(16.dp))
             state.accounts.size < 2 ->
                 Text(stringResource(R.string.transfer_editor_need_two_accounts), Modifier.padding(padding).padding(16.dp))
             else -> TransferForm(state, viewModel, Modifier.padding(padding))
@@ -113,7 +127,8 @@ private fun TransferForm(
     viewModel: TransferEditorViewModel,
     modifier: Modifier = Modifier,
 ) {
-    val accountOptions = state.accounts.map { it.id to "${it.name} (${it.currency})" }
+    val fromOptions = state.fromOptions.map { it.id to "${it.name} (${it.currency})" }
+    val toOptions = state.toOptions.map { it.id to "${it.name} (${it.currency})" }
     val chooseAccount = stringResource(R.string.transaction_choose_account)
     val errors = state.errors
 
@@ -124,14 +139,16 @@ private fun TransferForm(
         DropdownField(
             label = stringResource(R.string.transfer_field_from),
             selectedText = state.fromAccount?.name ?: chooseAccount,
-            options = accountOptions,
+            options = fromOptions,
             onSelect = viewModel::onFromAccountChange,
             supportingText = if (TransferEditorError.NO_FROM_ACCOUNT in errors) stringResource(R.string.transaction_error_no_account) else null,
             isError = TransferEditorError.NO_FROM_ACCOUNT in errors,
         )
 
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-            TextButton(onClick = viewModel::swapAccounts) { Text(stringResource(R.string.transfer_swap_accounts)) }
+        if (!state.isWithdrawal) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                TextButton(onClick = viewModel::swapAccounts) { Text(stringResource(R.string.transfer_swap_accounts)) }
+            }
         }
 
         val toError = when {
@@ -142,9 +159,9 @@ private fun TransferForm(
             else -> null
         }
         DropdownField(
-            label = stringResource(R.string.transfer_field_to),
+            label = stringResource(if (state.isWithdrawal) R.string.withdrawal_field_to else R.string.transfer_field_to),
             selectedText = state.toAccount?.name ?: chooseAccount,
-            options = accountOptions,
+            options = toOptions,
             onSelect = viewModel::onToAccountChange,
             supportingText = toError,
             isError = toError != null,
@@ -208,7 +225,7 @@ private fun TransferForm(
         )
 
         Text(
-            stringResource(R.string.transfer_hint_totals),
+            stringResource(if (state.isWithdrawal) R.string.withdrawal_hint_totals else R.string.transfer_hint_totals),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

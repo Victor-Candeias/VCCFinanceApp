@@ -21,6 +21,7 @@ import pt.vcc.financeapp.core.data.usecase.TransferInput
 import pt.vcc.financeapp.core.data.usecase.TransferLegs
 import pt.vcc.financeapp.core.data.usecase.TransferValidationError
 import pt.vcc.financeapp.core.model.Account
+import pt.vcc.financeapp.core.model.AccountType
 import pt.vcc.financeapp.core.model.AmountParser
 import pt.vcc.financeapp.core.model.TransactionStatus
 import pt.vcc.financeapp.core.model.currencyFractionDigits
@@ -41,6 +42,8 @@ enum class TransferEditorError {
 data class TransferEditorUiState(
     val isLoading: Boolean = true,
     val isNew: Boolean = true,
+    /** Levantamento: transferência de uma conta para uma conta do tipo Dinheiro. */
+    val isWithdrawal: Boolean = false,
     val accounts: List<Account> = emptyList(),
     val fromAccountId: String? = null,
     val toAccountId: String? = null,
@@ -55,6 +58,10 @@ data class TransferEditorUiState(
 ) {
     val fromAccount: Account? get() = accounts.find { it.id == fromAccountId }
     val toAccount: Account? get() = accounts.find { it.id == toAccountId }
+
+    /** Contas que podem ser origem/destino; num levantamento o destino é sempre uma conta Dinheiro. */
+    val fromOptions: List<Account> get() = if (isWithdrawal) accounts.filter { it.type != AccountType.CASH } else accounts
+    val toOptions: List<Account> get() = if (isWithdrawal) accounts.filter { it.type == AccountType.CASH } else accounts
 }
 
 @HiltViewModel
@@ -66,8 +73,10 @@ class TransferEditorViewModel @Inject constructor(
     private val clock: Clock,
 ) : ViewModel() {
     private val transferGroupId: String? = savedStateHandle.get<String>(TRANSFER_GROUP_ID_ARG)
+    private val isWithdrawal: Boolean = transferGroupId == null && savedStateHandle.get<Boolean>(WITHDRAWAL_ARG) == true
+    private var isDescriptionPrefilled = false
 
-    private val _uiState = MutableStateFlow(TransferEditorUiState(isNew = transferGroupId == null))
+    private val _uiState = MutableStateFlow(TransferEditorUiState(isNew = transferGroupId == null, isWithdrawal = isWithdrawal))
     val uiState: StateFlow<TransferEditorUiState> = _uiState.asStateFlow()
 
     init {
@@ -83,7 +92,18 @@ class TransferEditorViewModel @Inject constructor(
         val involved = setOfNotNull(legs?.outgoing?.accountId, legs?.incoming?.accountId)
         val accounts = accountRepository.observeAllAccounts().first().filter { it.isActive || it.id in involved }
 
-        _uiState.value = if (legs == null) {
+        _uiState.value = if (legs == null && isWithdrawal) {
+            val source = accounts.firstOrNull { it.isDefault && it.type != AccountType.CASH }
+                ?: accounts.firstOrNull { it.type != AccountType.CASH }
+            TransferEditorUiState(
+                isLoading = false,
+                isWithdrawal = true,
+                accounts = accounts,
+                fromAccountId = source?.id,
+                toAccountId = accounts.firstOrNull { it.type == AccountType.CASH }?.id,
+                date = LocalDate.now(clock),
+            )
+        } else if (legs == null) {
             TransferEditorUiState(
                 isLoading = false,
                 accounts = accounts,
@@ -120,6 +140,13 @@ class TransferEditorViewModel @Inject constructor(
         _uiState.update { it.copy(amount = value, errors = it.errors - TransferEditorError.INVALID_AMOUNT) }
 
     fun onDescriptionChange(value: String) = _uiState.update { it.copy(description = value, errors = it.errors - DESCRIPTION_ERRORS) }
+
+    /** Preenche a descrição sugerida de um levantamento novo uma única vez, sem apagar o que o utilizador escreveu. */
+    fun prefillWithdrawalDescription(value: String) {
+        if (!isWithdrawal || isDescriptionPrefilled || _uiState.value.isLoading) return
+        isDescriptionPrefilled = true
+        _uiState.update { if (it.description.isBlank()) it.copy(description = value) else it }
+    }
 
     fun onDateChange(value: LocalDate) = _uiState.update { it.copy(date = value) }
 
@@ -189,6 +216,7 @@ class TransferEditorViewModel @Inject constructor(
 
     companion object {
         const val TRANSFER_GROUP_ID_ARG = "transferGroupId"
+        const val WITHDRAWAL_ARG = "withdrawal"
         private val ACCOUNT_ERRORS = setOf(
             TransferEditorError.NO_FROM_ACCOUNT,
             TransferEditorError.NO_TO_ACCOUNT,

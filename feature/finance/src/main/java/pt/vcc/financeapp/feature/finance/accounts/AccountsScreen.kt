@@ -90,7 +90,8 @@ private fun AccountRow(item: AccountWithBalance, onClick: (String) -> Unit) {
         modifier = Modifier.clickable { onClick(account.id) },
         headlineContent = { Text(account.name, color = color) },
         supportingContent = {
-            Text(listOfNotNull(type, account.institutionName).joinToString(" · "))
+            val default = if (account.isDefault) stringResource(R.string.account_default_badge) else null
+            Text(listOfNotNull(type, account.institutionName, default).joinToString(" · "))
         },
         trailingContent = {
             Column(horizontalAlignment = Alignment.End) {

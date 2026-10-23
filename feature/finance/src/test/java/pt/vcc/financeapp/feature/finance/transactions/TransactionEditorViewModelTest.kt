@@ -74,6 +74,13 @@ class TransactionEditorViewModelTest {
     }
 
     @Test
+    fun newTransactionPreselectsDefaultAccount() {
+        accounts.accounts.value = listOf(account, account.copy(id = "acc-2", name = "Zeta", isDefault = true))
+
+        assertEquals("acc-2", viewModel().uiState.value.accountId)
+    }
+
+    @Test
     fun savesIncomeAndEditsItLater() {
         val vm = viewModel()
         vm.onTypeChange(TransactionType.INCOME)

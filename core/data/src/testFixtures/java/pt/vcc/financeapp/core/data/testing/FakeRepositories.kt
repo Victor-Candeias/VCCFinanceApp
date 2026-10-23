@@ -25,8 +25,12 @@ class FakeAccountRepository(initial: List<Account> = emptyList()) : AccountRepos
     override suspend fun getById(id: String): Account? = accounts.value.find { it.id == id }
     override suspend fun create(account: Account) = accounts.update { it + account }
     override suspend fun update(account: Account) = accounts.update { list -> list.map { if (it.id == account.id) account else it } }
-    override suspend fun deactivate(id: String) = accounts.update { list -> list.map { if (it.id == id) it.copy(isActive = false) else it } }
+    override suspend fun deactivate(id: String) =
+        accounts.update { list -> list.map { if (it.id == id) it.copy(isActive = false, isDefault = false) else it } }
     override suspend fun reactivate(id: String) = accounts.update { list -> list.map { if (it.id == id) it.copy(isActive = true) else it } }
+    override suspend fun setDefault(id: String) = accounts.update { list -> list.map { it.copy(isDefault = it.id == id) } }
+    override suspend fun clearDefault(id: String) =
+        accounts.update { list -> list.map { if (it.id == id) it.copy(isDefault = false) else it } }
 }
 
 class FakeCategoryRepository(initial: List<Category> = emptyList()) : CategoryRepository {

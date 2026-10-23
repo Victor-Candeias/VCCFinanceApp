@@ -22,6 +22,8 @@ data class AccountInput(
     /** IBAN em claro; 
 ull mantém o atual e em branco remove-o. */
     val iban: String? = null,
+    /** Conta por omissão nas transações; `null` mantém o valor atual. */
+    val isDefault: Boolean? = null,
 )
 
 enum class AccountValidationError { BLANK_NAME, NAME_TOO_LONG, INVALID_CURRENCY, CURRENCY_LOCKED, INVALID_IBAN, NOT_FOUND }
@@ -58,6 +60,7 @@ class SaveAccountUseCase @Inject constructor(
         }
         if (errors.isNotEmpty()) return SaveAccountResult.Invalid(errors)
 
+        val isActive = existing?.isActive ?: true
         val account = Account(
             id = existing?.id ?: UUID.randomUUID().toString(),
             name = name,
@@ -70,10 +73,13 @@ class SaveAccountUseCase @Inject constructor(
                 else -> fieldCipher.encrypt(iban)
             },
             connectionId = existing?.connectionId,
-            isActive = existing?.isActive ?: true,
+            isActive = isActive,
+            // Uma conta desativada nunca fica como conta por omissão.
+            isDefault = isActive && (input.isDefault ?: existing?.isDefault ?: false),
             createdAt = existing?.createdAt ?: clock.instant(),
         )
         if (existing == null) accountRepository.create(account) else accountRepository.update(account)
+        if (account.isDefault) accountRepository.setDefault(account.id)
         return SaveAccountResult.Saved(account)
     }
 

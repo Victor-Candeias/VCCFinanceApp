@@ -129,4 +129,31 @@ class SaveAccountUseCaseTest {
 
         assertEquals(SaveAccountResult.Invalid(setOf(AccountValidationError.INVALID_IBAN)), result)
     }
+
+    @Test
+    fun markingDefaultUnmarksPreviousDefaultAndNullKeepsIt() = runTest {
+        accounts.accounts.value = listOf(
+            Account(id = "old", name = "Antiga", type = AccountType.BANK_ACCOUNT, openingBalance = Money.zero(), isDefault = true, createdAt = Instant.EPOCH),
+        )
+
+        val created = (saveAccount(input.copy(isDefault = true)) as SaveAccountResult.Saved).account
+        assertEquals(listOf(created.id), accounts.accounts.value.filter { it.isDefault }.map { it.id })
+
+        saveAccount(input.copy(id = created.id, name = "Renomeada", isDefault = null))
+        assertTrue(accounts.accounts.value.single { it.id == created.id }.isDefault)
+
+        saveAccount(input.copy(id = created.id, isDefault = false))
+        assertTrue(accounts.accounts.value.none { it.isDefault })
+    }
+
+    @Test
+    fun inactiveAccountCannotBecomeDefault() = runTest {
+        accounts.accounts.value = listOf(
+            Account(id = "acc-1", name = "Conta", type = AccountType.CASH, openingBalance = Money.zero(), isActive = false, createdAt = Instant.EPOCH),
+        )
+
+        saveAccount(input.copy(id = "acc-1", isDefault = true))
+
+        assertTrue(accounts.accounts.value.none { it.isDefault })
+    }
 }

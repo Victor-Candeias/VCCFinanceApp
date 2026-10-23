@@ -1,5 +1,6 @@
 package pt.vcc.financeapp.core.database.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -29,5 +30,6 @@ data class AccountEntity(
     val openingBalanceMinor: Long = 0L,
     val connectionId: String? = null,
     val isActive: Boolean = true,
+    @ColumnInfo(defaultValue = "0") val isDefault: Boolean = false,
     val createdAt: Long = System.currentTimeMillis(),
 )

@@ -42,8 +42,10 @@ class TransferEditorViewModelTest {
     )
     private val transactions = FakeTransactionRepository()
 
-    private fun viewModel(groupId: String? = null) = TransferEditorViewModel(
-        SavedStateHandle(mapOf(TransferEditorViewModel.TRANSFER_GROUP_ID_ARG to groupId)),
+    private fun viewModel(groupId: String? = null, withdrawal: Boolean = false) = TransferEditorViewModel(
+        SavedStateHandle(
+            mapOf(TransferEditorViewModel.TRANSFER_GROUP_ID_ARG to groupId, TransferEditorViewModel.WITHDRAWAL_ARG to withdrawal),
+        ),
         transactions,
         accounts,
         SaveTransferUseCase(transactions, accounts, clock),
@@ -94,5 +96,46 @@ class TransferEditorViewModelTest {
         assertEquals(setOf(TransferEditorError.CURRENCY_MISMATCH), vm.uiState.value.errors)
         assertFalse(vm.uiState.value.isFinished)
         assertTrue(transactions.transactions.value.isEmpty())
+    }
+
+    @Test
+    fun withdrawalMovesMoneyFromDefaultAccountToCash() {
+        accounts.accounts.value = accounts.accounts.value.map { if (it.id == "savings") it.copy(isDefault = true) else it } +
+            checking.copy(id = "cash", name = "Carteira", type = AccountType.CASH)
+
+        val vm = viewModel(withdrawal = true)
+        val state = vm.uiState.value
+        assertTrue(state.isWithdrawal)
+        assertEquals("savings" to "cash", state.fromAccountId to state.toAccountId)
+        assertEquals(listOf("cash"), state.toOptions.map { it.id })
+        assertTrue(state.fromOptions.none { it.type == AccountType.CASH })
+
+        vm.prefillWithdrawalDescription("Levantamento")
+        vm.onAmountChange("40")
+        vm.save()
+
+        assertTrue(vm.uiState.value.isFinished)
+        val legs = transactions.transactions.value
+        assertEquals("savings", legs.single { it.type == TransactionType.EXPENSE }.accountId)
+        val incoming = legs.single { it.type == TransactionType.INCOME }
+        assertEquals("cash", incoming.accountId)
+        assertEquals(Money(4_000, "EUR"), incoming.amount)
+        assertEquals("Levantamento", incoming.description)
+        assertTrue(legs.all { it.isInternalTransfer })
+    }
+
+    @Test
+    fun withdrawalDescriptionIsPrefilledOnlyOnce() {
+        accounts.accounts.value = accounts.accounts.value + checking.copy(id = "cash", name = "Carteira", type = AccountType.CASH)
+        val vm = viewModel(withdrawal = true)
+
+        vm.prefillWithdrawalDescription("Levantamento")
+        vm.onDescriptionChange("")
+        vm.prefillWithdrawalDescription("Levantamento")
+
+        assertEquals("", vm.uiState.value.description)
+        val transfer = viewModel()
+        transfer.prefillWithdrawalDescription("Levantamento")
+        assertEquals("", transfer.uiState.value.description)
     }
 }

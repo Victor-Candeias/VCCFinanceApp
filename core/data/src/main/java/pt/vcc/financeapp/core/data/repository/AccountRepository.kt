@@ -11,7 +11,11 @@ interface AccountRepository {
     suspend fun create(account: Account)
     suspend fun update(account: Account)
 
-    /** As contas nunca são apagadas, para preservar o histórico de movimentos. */
+    /** As contas nunca são apagadas, para preservar o histórico de movimentos. Desativar retira a marca de conta por omissão. */
     suspend fun deactivate(id: String)
     suspend fun reactivate(id: String)
+
+    /** Marca [id] como conta por omissão nas transações, desmarcando a anterior. */
+    suspend fun setDefault(id: String)
+    suspend fun clearDefault(id: String)
 }

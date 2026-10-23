@@ -67,7 +67,7 @@ abstract class VCCFinanceDatabase : RoomDatabase() {
     abstract fun importProfileDao(): ImportProfileDao
 
     companion object {
-        const val VERSION = 3
+        const val VERSION = 4
         const val NAME = "vcc_finance.db"
     }
 }

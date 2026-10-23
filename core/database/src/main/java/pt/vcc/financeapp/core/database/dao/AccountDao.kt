@@ -28,9 +28,17 @@ interface AccountDao {
     @Update
     suspend fun update(account: AccountEntity)
 
-    @Query("UPDATE accounts SET isActive = 0 WHERE id = :id")
+    /** Desativar retira também a marca de conta por omissão. */
+    @Query("UPDATE accounts SET isActive = 0, isDefault = 0 WHERE id = :id")
     suspend fun deactivate(id: String)
 
     @Query("UPDATE accounts SET isActive = 1 WHERE id = :id")
     suspend fun reactivate(id: String)
+
+    /** Marca [id] como conta por omissão e desmarca todas as outras, numa só instrução. */
+    @Query("UPDATE accounts SET isDefault = CASE WHEN id = :id THEN 1 ELSE 0 END WHERE isDefault = 1 OR id = :id")
+    suspend fun setDefault(id: String)
+
+    @Query("UPDATE accounts SET isDefault = 0 WHERE id = :id")
+    suspend fun clearDefault(id: String)
 }

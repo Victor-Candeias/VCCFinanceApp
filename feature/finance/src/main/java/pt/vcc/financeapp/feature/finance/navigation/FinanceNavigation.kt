@@ -50,6 +50,7 @@ fun NavGraphBuilder.financeGraph(
         TransactionsScreen(
             onAddTransaction = { navController.navigate(TransactionEditorRoute()) },
             onAddTransfer = { navController.navigate(TransferEditorRoute()) },
+            onAddWithdrawal = { navController.navigate(TransferEditorRoute(withdrawal = true)) },
             onTransactionClick = { tx ->
                 val groupId = tx.transferGroupId
                 if (groupId != null) {

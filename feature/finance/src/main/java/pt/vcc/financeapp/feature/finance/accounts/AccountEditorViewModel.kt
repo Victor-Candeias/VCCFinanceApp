@@ -41,6 +41,8 @@ data class AccountEditorUiState(
     /** Existe um IBAN guardado que não foi possível decifrar; mantém-se se o campo não for alterado. */
     val isIbanUnreadable: Boolean = false,
     val isActive: Boolean = true,
+    /** Conta pré-selecionada ao criar receitas e despesas. */
+    val isDefault: Boolean = false,
     /** A moeda fica bloqueada quando a conta já tem movimentos. */
     val isCurrencyLocked: Boolean = false,
     val errors: Set<AccountEditorError> = emptySet(),
@@ -89,6 +91,7 @@ class AccountEditorViewModel @Inject constructor(
             isIbanRevealed = iban == null,
             isIbanUnreadable = account.ibanEncrypted != null && iban == null,
             isActive = account.isActive,
+            isDefault = account.isDefault,
             isCurrencyLocked = hasTransactions,
         )
     }
@@ -118,6 +121,8 @@ class AccountEditorViewModel @Inject constructor(
 
     fun revealIban() = _uiState.update { it.copy(isIbanRevealed = true) }
 
+    fun onDefaultChange(value: Boolean) = _uiState.update { if (it.isActive) it.copy(isDefault = value) else it }
+
     fun save() {
         val state = _uiState.value
         if (state.isSaving || state.isLoading) return
@@ -138,6 +143,7 @@ class AccountEditorViewModel @Inject constructor(
                     currency = state.currency,
                     openingBalanceMinor = amount,
                     iban = state.iban.takeIf { state.isIbanChanged },
+                    isDefault = state.isDefault,
                 ),
             )
             _uiState.update {

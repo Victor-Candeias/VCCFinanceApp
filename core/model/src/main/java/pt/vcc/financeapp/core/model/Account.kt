@@ -11,6 +11,8 @@ data class Account(
     val ibanEncrypted: String? = null,
     val connectionId: String? = null,
     val isActive: Boolean = true,
+    /** Conta pré-selecionada ao criar receitas/despesas; no máximo uma por utilizador. */
+    val isDefault: Boolean = false,
     val createdAt: Instant,
 ) {
     val currency: String get() = openingBalance.currency
