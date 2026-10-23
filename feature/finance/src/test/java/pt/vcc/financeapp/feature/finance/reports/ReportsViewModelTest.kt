@@ -19,11 +19,19 @@ import org.junit.Before
 import org.junit.Test
 import pt.vcc.financeapp.core.data.testing.FakeAccountRepository
 import pt.vcc.financeapp.core.data.testing.FakeCategoryRepository
+import pt.vcc.financeapp.core.data.testing.FakeMerchantRepository
+import pt.vcc.financeapp.core.data.testing.FakePurchaseRepository
 import pt.vcc.financeapp.core.data.testing.FakeTransactionRepository
 import pt.vcc.financeapp.core.model.Account
 import pt.vcc.financeapp.core.model.AccountType
 import pt.vcc.financeapp.core.model.Category
+import pt.vcc.financeapp.core.model.Merchant
 import pt.vcc.financeapp.core.model.Money
+import pt.vcc.financeapp.core.model.PaymentMethod
+import pt.vcc.financeapp.core.model.Purchase
+import pt.vcc.financeapp.core.model.PurchaseItem
+import pt.vcc.financeapp.core.model.PurchaseStatus
+import pt.vcc.financeapp.core.model.PurchaseType
 import pt.vcc.financeapp.core.model.ReportPeriod
 import pt.vcc.financeapp.core.model.ReportPeriodType
 import pt.vcc.financeapp.core.model.Transaction
@@ -100,12 +108,64 @@ class ReportsViewModelTest {
         assertEquals(ReportPeriod.month(YearMonth.of(2026, 10)), viewModel.uiState.value.period)
     }
 
-    private fun viewModel() = ReportsViewModel(
-        FakeTransactionRepository(transactions),
+    private fun viewModel(
+        txs: List<Transaction> = transactions,
+        purchases: FakePurchaseRepository = FakePurchaseRepository(),
+        merchants: List<Merchant> = emptyList(),
+    ) = ReportsViewModel(
+        FakeTransactionRepository(txs),
         FakeAccountRepository(accounts),
         FakeCategoryRepository(categories),
+        purchases,
+        FakeMerchantRepository(merchants),
         clock,
     )
+
+    @Test
+    fun purchasesSectionSplitsMbAndCashAndResolvesMerchants() = runTest {
+        val purchaseTxs = listOf(
+            tx("p-mb", "2026-10-06T12:00:00Z", 2_000, "food").copy(source = TransactionSource.PURCHASE),
+            tx("p-cash", "2026-10-07T12:00:00Z", 450, "food", account = "meal").copy(source = TransactionSource.PURCHASE),
+        )
+        fun purchase(id: String, txId: String, method: PaymentMethod, merchant: String?, at: String) = Purchase(
+            id = id, type = PurchaseType.QUICK, status = PurchaseStatus.COMPLETED, occurredAt = Instant.parse(at),
+            merchantId = merchant, paymentMethod = method, transactionId = txId, createdAt = Instant.EPOCH, updatedAt = Instant.EPOCH,
+            completedAt = Instant.parse(at),
+        )
+        val repository = FakePurchaseRepository().apply {
+            purchases.value = listOf(
+                purchase("a", "p-mb", PaymentMethod.MB, "pingo", "2026-10-06T12:00:00Z"),
+                purchase("b", "p-cash", PaymentMethod.CASH, null, "2026-10-07T12:00:00Z"),
+            )
+            items.value = listOf(
+                PurchaseItem("a1", "a", "Leite", java.math.BigDecimal.ONE, 2_000),
+                PurchaseItem("b1", "b", "Café", java.math.BigDecimal.ONE, 450),
+            )
+        }
+        val viewModel = viewModel(
+            txs = transactions + purchaseTxs,
+            purchases = repository,
+            merchants = listOf(Merchant("pingo", "Pingo Doce", "pingo doce", createdAt = Instant.EPOCH)),
+        )
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect {} }
+
+        val content = requireNotNull(viewModel.uiState.first { !it.isLoading }.content)
+        val report = requireNotNull(content.purchases)
+
+        assertEquals(Money(2_450, "EUR"), report.total)
+        assertEquals(mapOf<PaymentMethod?, Long>(PaymentMethod.MB to 2_000, PaymentMethod.CASH to 450), report.byPaymentMethod.associate { it.key to it.total.amountMinor })
+        assertEquals("Pingo Doce", content.merchantNames["pingo"])
+        assertEquals(listOf("Leite", "Café"), report.byProduct.map { it.key })
+        assertEquals(Money(5_000 + 2_450, "EUR"), content.totals.expenses)
+    }
+
+    @Test
+    fun reportWithoutPurchasesHasNoPurchasesSection() = runTest {
+        val viewModel = viewModel()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect {} }
+
+        assertNull(requireNotNull(viewModel.uiState.first { !it.isLoading }.content).purchases)
+    }
 
     private fun tx(
         id: String,

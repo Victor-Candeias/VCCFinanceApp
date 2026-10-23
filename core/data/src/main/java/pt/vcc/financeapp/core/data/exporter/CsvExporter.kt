@@ -17,6 +17,7 @@ object CsvExporter {
         writer.write("\uFEFF")
         writer.write(ExportText.TRANSACTION_HEADERS.joinToString(SEPARATOR.toString(), postfix = LINE_END) { escape(it) })
         data.transactions.forEach { tx ->
+            val purchase = data.purchaseOf(tx.id)
             val fields = listOf(
                 data.localDate(tx.bookingDate).toString(),
                 tx.valueDate?.let { data.localDate(it).toString() }.orEmpty(),
@@ -28,6 +29,8 @@ object CsvExporter {
                 tx.amount.currency,
                 ExportText.status(tx.status),
                 text(tx.notes.orEmpty()),
+                ExportText.paymentMethod(purchase?.purchase?.paymentMethod),
+                text(purchase?.let(ExportText::itemsSummary).orEmpty()),
             )
             writer.write(fields.joinToString(SEPARATOR.toString(), postfix = LINE_END) { escape(it) })
         }

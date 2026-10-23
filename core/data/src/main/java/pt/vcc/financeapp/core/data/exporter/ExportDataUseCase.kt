@@ -13,7 +13,10 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import pt.vcc.financeapp.core.data.repository.AccountRepository
 import pt.vcc.financeapp.core.data.repository.CategoryRepository
+import pt.vcc.financeapp.core.data.repository.MerchantRepository
+import pt.vcc.financeapp.core.data.repository.PurchaseRepository
 import pt.vcc.financeapp.core.data.repository.TransactionRepository
+import pt.vcc.financeapp.core.model.PurchaseStatus
 
 /** Gera o PDF; separado porque usa `android.graphics.pdf` e não corre nos testes JVM. */
 fun interface PdfExportWriter {
@@ -29,6 +32,8 @@ class ExportDataUseCase(
     private val accountRepository: AccountRepository,
     private val categoryRepository: CategoryRepository,
     private val transactionRepository: TransactionRepository,
+    private val purchaseRepository: PurchaseRepository,
+    private val merchantRepository: MerchantRepository,
     private val documentWriter: DocumentWriter,
     private val pdfWriter: PdfExportWriter,
     private val clock: Clock,
@@ -39,24 +44,39 @@ class ExportDataUseCase(
         accountRepository: AccountRepository,
         categoryRepository: CategoryRepository,
         transactionRepository: TransactionRepository,
+        purchaseRepository: PurchaseRepository,
+        merchantRepository: MerchantRepository,
         documentWriter: DocumentWriter,
         pdfWriter: PdfExportWriter,
         clock: Clock,
-    ) : this(accountRepository, categoryRepository, transactionRepository, documentWriter, pdfWriter, clock, Dispatchers.IO)
+    ) : this(
+        accountRepository, categoryRepository, transactionRepository, purchaseRepository, merchantRepository,
+        documentWriter, pdfWriter, clock, Dispatchers.IO,
+    )
 
     fun observeTransactionCount(range: ExportRange): Flow<Int> =
         transactionRepository.observeInPeriod(range.fromOrMin(), range.toOrMax()).map { it.size }
 
-    suspend fun load(range: ExportRange): ExportData = ExportData(
-        generatedAt = clock.instant(),
-        zone = clock.zone,
-        range = range,
-        accounts = accountRepository.observeAllAccounts().first().sortedBy { it.name.lowercase() },
-        categories = categoryRepository.observeAllCategories().first()
-            .sortedWith(compareBy({ it.type }, { it.name.lowercase() })),
-        transactions = transactionRepository.observeInPeriod(range.fromOrMin(), range.toOrMax()).first()
-            .sortedWith(compareBy({ it.bookingDate }, { it.createdAt })),
-    )
+    suspend fun load(range: ExportRange): ExportData {
+        val transactions = transactionRepository.observeInPeriod(range.fromOrMin(), range.toOrMax()).first()
+            .sortedWith(compareBy({ it.bookingDate }, { it.createdAt }))
+        val transactionIds = transactions.mapTo(HashSet()) { it.id }
+        // As compras acompanham os seus movimentos: só entram as que geraram um movimento exportado.
+        val purchases = purchaseRepository.getAllDetails()
+            .filter { it.purchase.status == PurchaseStatus.COMPLETED && it.purchase.transactionId in transactionIds }
+            .sortedWith(compareBy({ it.purchase.occurredAt }, { it.purchase.id }))
+        return ExportData(
+            generatedAt = clock.instant(),
+            zone = clock.zone,
+            range = range,
+            accounts = accountRepository.observeAllAccounts().first().sortedBy { it.name.lowercase() },
+            categories = categoryRepository.observeAllCategories().first()
+                .sortedWith(compareBy({ it.type }, { it.name.lowercase() })),
+            transactions = transactions,
+            purchases = purchases,
+            merchants = if (purchases.isEmpty()) emptyList() else merchantRepository.observeAll().first(),
+        )
+    }
 
     suspend operator fun invoke(format: ExportFormat, range: ExportRange, uri: String): ExportResult =
         withContext(dispatcher) {

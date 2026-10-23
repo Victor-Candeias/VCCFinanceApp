@@ -17,6 +17,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import pt.vcc.financeapp.core.data.repository.AccountRepository
 import pt.vcc.financeapp.core.data.repository.CategoryRepository
+import pt.vcc.financeapp.core.data.repository.MerchantRepository
+import pt.vcc.financeapp.core.data.repository.PurchaseRepository
 import pt.vcc.financeapp.core.data.repository.TransactionRepository
 import pt.vcc.financeapp.core.model.Account
 import pt.vcc.financeapp.core.model.Category
@@ -25,6 +27,9 @@ import pt.vcc.financeapp.core.model.FinancialReport
 import pt.vcc.financeapp.core.model.Money
 import pt.vcc.financeapp.core.model.MonthTotals
 import pt.vcc.financeapp.core.model.PeriodTotals
+import pt.vcc.financeapp.core.model.Purchase
+import pt.vcc.financeapp.core.model.PurchaseItem
+import pt.vcc.financeapp.core.model.PurchaseReport
 import pt.vcc.financeapp.core.model.ReportPeriod
 import pt.vcc.financeapp.core.model.ReportPeriodType
 
@@ -52,6 +57,9 @@ data class ReportContent(
     /** Evolução mensal; só tem elementos nos relatórios anuais. */
     val monthly: List<MonthTotals>,
     val transactionCount: Int,
+    /** Compras pagas no período (MB/Dinheiro, tipo, estabelecimento e produto); `null` sem compras. */
+    val purchases: PurchaseReport? = null,
+    val merchantNames: Map<String, String> = emptyMap(),
 )
 
 data class ReportsUiState(
@@ -69,6 +77,8 @@ class ReportsViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
     private val accountRepository: AccountRepository,
     private val categoryRepository: CategoryRepository,
+    private val purchaseRepository: PurchaseRepository,
+    private val merchantRepository: MerchantRepository,
     private val clock: Clock,
 ) : ViewModel() {
     private val period = MutableStateFlow(ReportPeriod.month(YearMonth.now(clock)))
@@ -77,12 +87,18 @@ class ReportsViewModel @Inject constructor(
     val uiState: StateFlow<ReportsUiState> = period
         .flatMapLatest { period ->
             val (from, to) = period.range(clock.zone)
+            val purchases = combine(
+                purchaseRepository.observeCompleted(),
+                purchaseRepository.observeCompletedItemsInPeriod(from, to),
+                merchantRepository.observeAll(),
+            ) { purchases, items, merchants -> PurchaseSources(purchases, items, merchants.associate { it.id to it.name }) }
             combine(
                 transactionRepository.observeInPeriod(from, to),
                 accountRepository.observeAllAccounts(),
                 categoryRepository.observeAllCategories(),
+                purchases,
                 selectedCurrency,
-            ) { transactions, accounts, categories, currency ->
+            ) { transactions, accounts, categories, purchaseSources, currency ->
                 val byId = categories.associateBy { it.id }
                 val reports = FinancialReport.build(period, transactions, clock.zone) { id ->
                     id?.let { byId[it]?.parentCategoryId ?: it }
@@ -92,7 +108,10 @@ class ReportsViewModel @Inject constructor(
                     period = period,
                     isLoading = false,
                     currencies = reports.map { it.currency },
-                    content = report?.toContent(accounts, byId),
+                    content = report?.toContent(accounts, byId)?.copy(
+                        purchases = PurchaseReport.from(report, purchaseSources.purchases, purchaseSources.items),
+                        merchantNames = purchaseSources.merchantNames,
+                    ),
                 )
             }
                 .catch { emit(ReportsUiState(period = period, isLoading = false, error = it.message)) }
@@ -108,6 +127,8 @@ class ReportsViewModel @Inject constructor(
     fun selectCurrency(currency: String) {
         selectedCurrency.value = currency
     }
+
+    private class PurchaseSources(val purchases: List<Purchase>, val items: List<PurchaseItem>, val merchantNames: Map<String, String>)
 
     private fun FinancialReport.toContent(accounts: List<Account>, categories: Map<String, Category>): ReportContent {
         val accountNames = accounts.associate { it.id to it.name }

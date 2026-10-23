@@ -13,11 +13,12 @@ import java.util.Locale
 import javax.inject.Inject
 import pt.vcc.financeapp.core.model.FinancialAggregations
 import pt.vcc.financeapp.core.model.Money
+import pt.vcc.financeapp.core.model.PurchaseDetail
 import pt.vcc.financeapp.core.model.currencyFractionDigits
 
 /**
  * Relatório PDF em A4: resumo por moeda, gráfico de barras das despesas por categoria principal
- * (moeda com mais movimentos) e tabela de movimentos, com paginação.
+ * (moeda com mais movimentos), tabela de movimentos e tabela de compras (MB/Dinheiro), com paginação.
  */
 class AndroidPdfExporter @Inject constructor() : PdfExportWriter {
 
@@ -29,6 +30,7 @@ class AndroidPdfExporter @Inject constructor() : PdfExportWriter {
                 summary()
                 categoryChart()
                 transactionTable()
+                purchaseTable()
                 finish()
             }
             document.writeTo(out)
@@ -135,6 +137,51 @@ class AndroidPdfExporter @Inject constructor() : PdfExportWriter {
             }
         }
 
+        fun purchaseTable() {
+            if (data.purchases.isEmpty()) return
+            section("Compras (${data.purchases.size})")
+            val headers = listOf("Data", "Estabelecimento", "Tipo", "Pagamento")
+            fun purchaseHeader() {
+                ensureSpace(ROW)
+                y += ROW
+                var x = MARGIN
+                headers.forEachIndexed { index, label ->
+                    canvas.drawText(label, x, y, bodyBold)
+                    x += PURCHASE_COLUMNS[index]
+                }
+                val total = "Total"
+                canvas.drawText(total, PAGE_WIDTH - MARGIN - bodyBold.measureText(total), y, bodyBold)
+                canvas.drawLine(MARGIN, y + 4f, PAGE_WIDTH - MARGIN, y + 4f, line)
+            }
+            purchaseHeader()
+            data.purchases.forEach { (purchase, items) ->
+                if (y + 2 * ROW > PAGE_HEIGHT - MARGIN - FOOTER) {
+                    newPage()
+                    purchaseHeader()
+                }
+                y += ROW
+                val cells = listOf(
+                    DATE.format(data.localDate(purchase.occurredAt)),
+                    data.merchantName(purchase.merchantId).ifEmpty { "—" },
+                    ExportText.purchaseType(purchase.type),
+                    ExportText.paymentMethod(purchase.paymentMethod),
+                )
+                var x = MARGIN
+                cells.forEachIndexed { index, value ->
+                    canvas.drawText(ellipsize(value, body, PURCHASE_COLUMNS[index] - 6f), x, y, body)
+                    x += PURCHASE_COLUMNS[index]
+                }
+                val amount = money(Money(purchase.totalMinor, purchase.currency))
+                canvas.drawText(amount, PAGE_WIDTH - MARGIN - body.measureText(amount), y, body)
+                if (items.isNotEmpty()) {
+                    y += ROW - 3f
+                    val summary = ExportText.itemsSummary(PurchaseDetail(purchase, items))
+                    canvas.drawText(ellipsize(summary, muted, CONTENT_WIDTH - 12f), MARGIN + 12f, y, muted)
+                }
+                canvas.drawLine(MARGIN, y + 4f, PAGE_WIDTH - MARGIN, y + 4f, line)
+            }
+        }
+
         fun finish() {
             footer()
             document.finishPage(page)
@@ -210,6 +257,7 @@ class AndroidPdfExporter @Inject constructor() : PdfExportWriter {
         const val ELLIPSIS = "…"
         const val BAR_COLOR = 0xFF3F6E9E.toInt()
         val COLUMNS = floatArrayOf(58f, 170f, 110f, 87f)
+        val PURCHASE_COLUMNS = floatArrayOf(58f, 170f, 110f, 87f)
         val LOCALE: Locale = Locale.forLanguageTag("pt-PT")
         val DATE: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", LOCALE)
         val DATE_TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm", LOCALE)

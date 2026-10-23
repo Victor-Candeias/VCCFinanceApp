@@ -7,8 +7,13 @@ import java.time.ZoneId
 import pt.vcc.financeapp.core.model.Account
 import pt.vcc.financeapp.core.model.AccountType
 import pt.vcc.financeapp.core.model.Category
+import pt.vcc.financeapp.core.model.Merchant
 import pt.vcc.financeapp.core.model.Money
+import pt.vcc.financeapp.core.model.PaymentMethod
 import pt.vcc.financeapp.core.model.PeriodTotals
+import pt.vcc.financeapp.core.model.PurchaseDetail
+import pt.vcc.financeapp.core.model.PurchaseItem
+import pt.vcc.financeapp.core.model.PurchaseType
 import pt.vcc.financeapp.core.model.Transaction
 import pt.vcc.financeapp.core.model.TransactionStatus
 import pt.vcc.financeapp.core.model.TransactionType
@@ -36,9 +41,20 @@ data class ExportData(
     val categories: List<Category>,
     /** Ordenados por data contabilística. */
     val transactions: List<Transaction>,
+    /** Compras concluídas cujo movimento está em [transactions], ordenadas por data. */
+    val purchases: List<PurchaseDetail> = emptyList(),
+    val merchants: List<Merchant> = emptyList(),
 ) {
     private val accountsById = accounts.associateBy { it.id }
     private val categoriesById = categories.associateBy { it.id }
+    private val merchantsById = merchants.associateBy { it.id }
+    private val purchasesByTransaction = purchases.filter { it.purchase.transactionId != null }
+        .associateBy { it.purchase.transactionId }
+
+    /** Compra que gerou o movimento, se existir. */
+    fun purchaseOf(transactionId: String): PurchaseDetail? = purchasesByTransaction[transactionId]
+
+    fun merchantName(id: String?): String = id?.let(merchantsById::get)?.name.orEmpty()
 
     /** Totais por moeda (só movimentos confirmados, sem transferências internas). */
     val totals: List<PeriodTotals> = PeriodTotals.byCurrency(transactions)
@@ -64,7 +80,29 @@ data class ExportData(
 internal object ExportText {
     val TRANSACTION_HEADERS = listOf(
         "Data", "Data-valor", "Conta", "Tipo", "Descrição", "Categoria", "Montante", "Moeda", "Estado", "Notas",
+        "Pagamento", "Artigos da compra",
     )
+
+    fun paymentMethod(method: PaymentMethod?): String = when (method) {
+        PaymentMethod.MB -> "MB"
+        PaymentMethod.CASH -> "Dinheiro"
+        null -> ""
+    }
+
+    fun purchaseType(type: PurchaseType): String = when (type) {
+        PurchaseType.QUICK -> "Compra rápida"
+        PurchaseType.PLANNED -> "Compra por lista"
+        PurchaseType.EXPRESS -> "Despesa rápida"
+    }
+
+    /** Quantidade sem zeros à direita, ex.: "1,5". */
+    fun quantity(item: PurchaseItem): String = item.quantity.stripTrailingZeros().toPlainString().replace('.', ',')
+
+    /** Resumo dos artigos numa célula, ex.: "Leite ×2 1,90; Pão 0,30". */
+    fun itemsSummary(detail: PurchaseDetail): String = detail.items.sortedBy { it.position }.joinToString("; ") { item ->
+        val qty = if (item.quantity.compareTo(java.math.BigDecimal.ONE) == 0) "" else " ×${quantity(item)}"
+        "${item.name.trim()}$qty ${decimal(item.totalMinor, detail.purchase.currency).toPlainString().replace('.', ',')}"
+    }
 
     fun type(type: TransactionType): String = when (type) {
         TransactionType.INCOME -> "Receita"

@@ -11,6 +11,7 @@ import kotlinx.coroutines.withContext
 import pt.vcc.financeapp.core.data.exporter.DocumentWriter
 import pt.vcc.financeapp.core.data.importer.DocumentReader
 import pt.vcc.financeapp.core.data.importer.ImportParseException
+import pt.vcc.financeapp.core.data.usecase.SeedProductCatalogUseCase
 import pt.vcc.financeapp.core.database.VCCFinanceDatabase
 import pt.vcc.financeapp.core.database.backup.DatabaseBackupStore
 import pt.vcc.financeapp.core.database.backup.DatabaseSnapshot
@@ -34,6 +35,7 @@ data class BackupSummary(
     val accountCount: Int,
     val transactionCount: Int,
     val categoryCount: Int,
+    val purchaseCount: Int = 0,
 )
 
 /** Backup já decifrado e validado, pronto a restaurar depois da confirmação do utilizador. */
@@ -57,10 +59,17 @@ class BackupManager(
     private val clock: Clock,
     private val dispatcher: CoroutineDispatcher,
     private val iterations: Int,
+    /** Corre depois de um restauro bem-sucedido (repõe o catálogo de produtos de backups anteriores à v5). */
+    private val afterRestore: suspend () -> Unit = {},
 ) {
     @Inject
-    constructor(store: DatabaseBackupStore, reader: DocumentReader, writer: DocumentWriter, clock: Clock) :
-        this(store, reader, writer, clock, Dispatchers.Default, BackupCrypto.DEFAULT_ITERATIONS)
+    constructor(
+        store: DatabaseBackupStore,
+        reader: DocumentReader,
+        writer: DocumentWriter,
+        clock: Clock,
+        seedProductCatalog: SeedProductCatalogUseCase,
+    ) : this(store, reader, writer, clock, Dispatchers.Default, BackupCrypto.DEFAULT_ITERATIONS, { seedProductCatalog() })
 
     suspend fun create(uri: String, password: CharArray): BackupResult = try {
         val payload = BackupPayload(clock.instant(), store.snapshot())
@@ -90,6 +99,7 @@ class BackupManager(
 
     suspend fun restore(backup: OpenedBackup): BackupResult = try {
         store.restore(backup.snapshot)
+        afterRestore()
         BackupResult.Restored(backup.summary)
     } catch (e: IncompatibleBackupException) {
         BackupResult.Failed(BackupError.INCOMPATIBLE)
@@ -104,6 +114,7 @@ class BackupManager(
         accountCount = payload.snapshot.rowCount("accounts"),
         transactionCount = payload.snapshot.rowCount("transactions"),
         categoryCount = payload.snapshot.rowCount("categories"),
+        purchaseCount = payload.snapshot.rowCount("purchases"),
     )
 
     private companion object {

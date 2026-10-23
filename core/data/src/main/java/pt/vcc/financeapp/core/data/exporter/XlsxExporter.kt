@@ -8,7 +8,7 @@ import java.util.zip.ZipOutputStream
 
 /**
  * Livro XLSX (Office Open XML) escrito diretamente em ZIP, sem bibliotecas: folhas `Movimentos`,
- * `Contas`, `Categorias` e `Resumo`. Datas como datas do Excel e montantes como números, com
+ * `Contas`, `Categorias`, `Compras`, `Artigos` e `Resumo`. Datas como datas do Excel e montantes como números, com
  * texto em `inlineStr` (sem tabela de strings partilhadas).
  */
 object XlsxExporter {
@@ -29,7 +29,7 @@ object XlsxExporter {
     private class Sheet(val name: String, val widths: List<Int>, val rows: List<List<Cell>>)
 
     fun write(data: ExportData, out: OutputStream) {
-        val sheets = listOf(transactions(data), accounts(data), categories(data), summary(data))
+        val sheets = listOf(transactions(data), accounts(data), categories(data), purchases(data), purchaseItems(data), summary(data))
         val zip = ZipOutputStream(out)
         fun entry(name: String, content: String) {
             zip.putNextEntry(ZipEntry(name))
@@ -52,8 +52,9 @@ object XlsxExporter {
 
     private fun transactions(data: ExportData) = Sheet(
         name = "Movimentos",
-        widths = listOf(12, 12, 22, 14, 40, 30, 14, 8, 12, 30),
+        widths = listOf(12, 12, 22, 14, 40, 30, 14, 8, 12, 30, 12, 50),
         rows = listOf(header(*ExportText.TRANSACTION_HEADERS.toTypedArray())) + data.transactions.map { tx ->
+            val purchase = data.purchaseOf(tx.id)
             listOf(
                 Cell.Date(data.localDate(tx.bookingDate)),
                 tx.valueDate?.let { Cell.Date(data.localDate(it)) } ?: Cell.Empty,
@@ -65,8 +66,50 @@ object XlsxExporter {
                 Cell.Text(tx.amount.currency),
                 Cell.Text(ExportText.status(tx.status)),
                 text(tx.notes),
+                text(ExportText.paymentMethod(purchase?.purchase?.paymentMethod)),
+                text(purchase?.let(ExportText::itemsSummary)),
             )
         },
+    )
+
+    private fun purchases(data: ExportData) = Sheet(
+        name = "Compras",
+        widths = listOf(12, 18, 24, 10, 22, 14, 8, 10, 30),
+        rows = listOf(header("Data", "Tipo", "Estabelecimento", "Pagamento", "Conta", "Total", "Moeda", "Artigos", "Notas")) +
+            data.purchases.map { (purchase, items) ->
+                listOf(
+                    Cell.Date(data.localDate(purchase.occurredAt)),
+                    Cell.Text(ExportText.purchaseType(purchase.type)),
+                    text(data.merchantName(purchase.merchantId)),
+                    text(ExportText.paymentMethod(purchase.paymentMethod)),
+                    text(purchase.accountId?.let(data::accountName)),
+                    Cell.Number(ExportText.decimal(purchase.totalMinor, purchase.currency), STYLE_AMOUNT),
+                    Cell.Text(purchase.currency),
+                    Cell.Number(BigDecimal.valueOf(items.size.toLong())),
+                    text(purchase.notes),
+                )
+            },
+    )
+
+    private fun purchaseItems(data: ExportData) = Sheet(
+        name = "Artigos",
+        widths = listOf(12, 24, 30, 10, 8, 14, 12, 14, 22),
+        rows = listOf(header("Data", "Estabelecimento", "Artigo", "Quantidade", "Unidade", "Preço unitário", "Desconto", "Total", "Categoria do produto")) +
+            data.purchases.flatMap { (purchase, items) ->
+                items.sortedBy { it.position }.map { item ->
+                    listOf(
+                        Cell.Date(data.localDate(purchase.occurredAt)),
+                        text(data.merchantName(purchase.merchantId)),
+                        Cell.Text(item.name),
+                        Cell.Number(item.quantity.stripTrailingZeros()),
+                        text(item.unit),
+                        Cell.Number(ExportText.decimal(item.unitPriceMinor, purchase.currency), STYLE_AMOUNT),
+                        Cell.Number(ExportText.decimal(item.discountMinor, purchase.currency), STYLE_AMOUNT),
+                        Cell.Number(ExportText.decimal(item.totalMinor, purchase.currency), STYLE_AMOUNT),
+                        text(item.categoryName),
+                    )
+                }
+            },
     )
 
     private fun accounts(data: ExportData) = Sheet(

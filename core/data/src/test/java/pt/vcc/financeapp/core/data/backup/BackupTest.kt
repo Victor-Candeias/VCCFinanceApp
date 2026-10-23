@@ -58,21 +58,25 @@ class BackupTest {
                     ),
                 ),
                 BackupTable("categories", listOf("id"), emptyList()),
+                BackupTable("purchases", listOf("id", "paymentMethod"), listOf(listOf("p1", "MB"), listOf("p2", "CASH"))),
             ),
         )
         val store = FakeStore(original)
         val files = FakeFiles()
-        val manager = BackupManager(store, files, files, CLOCK, Dispatchers.Unconfined, ITERATIONS)
+        var reseeded = 0
+        val manager = BackupManager(store, files, files, CLOCK, Dispatchers.Unconfined, ITERATIONS) { reseeded++ }
 
         val created = manager.create("content://backup", password) as BackupResult.Created
-        assertEquals(BackupSummary(CLOCK.instant(), 1, 2, 0), created.summary)
+        assertEquals(BackupSummary(CLOCK.instant(), 1, 2, 0, purchaseCount = 2), created.summary)
 
         assertEquals(BackupResult.Failed(BackupError.WRONG_PASSWORD), manager.open("content://backup", "errada!!".toCharArray()))
         assertEquals(null, store.restored)
+        assertEquals(0, reseeded)
 
         val opened = manager.open("content://backup", password) as BackupResult.Opened
         assertEquals(created.summary, opened.backup.summary)
         assertEquals(BackupResult.Restored(created.summary), manager.restore(opened.backup))
+        assertEquals(1, reseeded)
 
         val restored = requireNotNull(store.restored)
         assertEquals(3, restored.schemaVersion)

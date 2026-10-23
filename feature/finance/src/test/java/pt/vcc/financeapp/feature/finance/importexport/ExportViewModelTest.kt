@@ -21,6 +21,8 @@ import pt.vcc.financeapp.core.data.exporter.ExportFormat
 import pt.vcc.financeapp.core.data.exporter.ExportResult
 import pt.vcc.financeapp.core.data.testing.FakeAccountRepository
 import pt.vcc.financeapp.core.data.testing.FakeCategoryRepository
+import pt.vcc.financeapp.core.data.testing.FakeMerchantRepository
+import pt.vcc.financeapp.core.data.testing.FakePurchaseRepository
 import pt.vcc.financeapp.core.data.testing.FakeTransactionRepository
 import pt.vcc.financeapp.core.model.Money
 import pt.vcc.financeapp.core.model.Transaction
@@ -47,7 +49,7 @@ class ExportViewModelTest {
     @Test
     fun countsMovementsPerScopeAndExportsTheChosenFormat() {
         val vm = ExportViewModel(
-            ExportDataUseCase(FakeAccountRepository(), FakeCategoryRepository(), transactions, writer, { _, _ -> }, clock, Dispatchers.Main),
+            ExportDataUseCase(FakeAccountRepository(), FakeCategoryRepository(), transactions, FakePurchaseRepository(), FakeMerchantRepository(), writer, { _, _ -> }, clock, Dispatchers.Main),
             clock,
         )
         assertEquals(1, vm.uiState.value.transactionCount)

@@ -361,6 +361,16 @@
     <string name="reports_income_empty">Sem receitas neste período.</string>
     <string name="reports_monthly_title">Evolução mensal</string>
     <string name="reports_by_account">Por conta</string>
+    <string name="reports_purchases_title">Compras</string>
+    <plurals name="reports_purchases_count">
+        <item quantity="one">%1$d compra paga, %2$s no total.</item>
+        <item quantity="other">%1$d compras pagas, %2$s no total.</item>
+    </plurals>
+    <string name="reports_purchases_by_payment">Por forma de pagamento</string>
+    <string name="reports_purchases_no_method">Sem forma de pagamento</string>
+    <string name="reports_purchases_by_type">Por tipo de compra</string>
+    <string name="reports_purchases_by_merchant">Por estabelecimento</string>
+    <string name="reports_purchases_top_products">Produtos com mais gasto</string>
     <string name="settings_budgets">Orçamentos</string>
     <string name="settings_budgets_description">Limites de gasto por categoria e alertas</string>
     <string name="budgets_title">Orçamentos</string>
@@ -443,6 +453,7 @@
     <string name="backup_restore_confirm">Restaurar</string>
     <string name="backup_in_progress">A processar… pode demorar alguns segundos.</string>
     <string name="backup_contents">%1$s, %2$s e %3$s</string>
+    <string name="backup_contents_with_purchases">%1$s, %2$s, %3$s e %4$s</string>
     <string name="backup_created">Backup criado com %1$s.</string>
     <string name="backup_restored">Backup restaurado: %1$s.</string>
     <string name="backup_error_not_a_backup">O ficheiro escolhido não é um backup válido da app.</string>
@@ -463,6 +474,10 @@
     <plurals name="backup_categories">
         <item quantity="one">%1$d categoria</item>
         <item quantity="other">%1$d categorias</item>
+    </plurals>
+    <plurals name="backup_purchases">
+        <item quantity="one">%1$d compra</item>
+        <item quantity="other">%1$d compras</item>
     </plurals>
 
     <!-- Compras (Sprint 8) -->

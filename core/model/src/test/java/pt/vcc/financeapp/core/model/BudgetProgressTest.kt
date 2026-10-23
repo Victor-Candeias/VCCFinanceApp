@@ -50,6 +50,20 @@ class BudgetProgressTest {
     }
 
     @Test
+    fun purchaseExpensesCountOnceInTheirCategory() {
+        // Uma compra gera um único movimento (`source = PURCHASE`); os itens não são contados à parte.
+        val transactions = listOf(
+            tx("purchase-mb", 1_250, "food").copy(source = TransactionSource.PURCHASE),
+            tx("purchase-cash", 300, "coffee").copy(source = TransactionSource.PURCHASE, accountId = "cash"),
+            tx("manual", 450, "food"),
+        )
+
+        val progress = requireNotNull(BudgetProgress.calculate(budget(limit = 5_000, category = "food"), transactions, categories, now, zone))
+
+        assertEquals(Money(2_000, "EUR"), progress.spent)
+    }
+
+    @Test
     fun alertLevelsAndValidity() {
         val transactions = listOf(tx("1", 3_000, null))
 

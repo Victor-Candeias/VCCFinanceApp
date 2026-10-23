@@ -230,9 +230,11 @@ private fun BackupMessage.text(): String = when (this) {
 private fun BackupSummary.createdAtText(): String = createdAt.atZone(ZoneId.systemDefault()).format(SummaryDateFormatter)
 
 @Composable
-private fun BackupSummary.contentsText(): String = stringResource(
-    R.string.backup_contents,
-    pluralStringResource(R.plurals.backup_accounts, accountCount, accountCount),
-    pluralStringResource(R.plurals.backup_transactions, transactionCount, transactionCount),
-    pluralStringResource(R.plurals.backup_categories, categoryCount, categoryCount),
-)
+private fun BackupSummary.contentsText(): String {
+    val accounts = pluralStringResource(R.plurals.backup_accounts, accountCount, accountCount)
+    val transactions = pluralStringResource(R.plurals.backup_transactions, transactionCount, transactionCount)
+    val categories = pluralStringResource(R.plurals.backup_categories, categoryCount, categoryCount)
+    if (purchaseCount == 0) return stringResource(R.string.backup_contents, accounts, transactions, categories)
+    val purchases = pluralStringResource(R.plurals.backup_purchases, purchaseCount, purchaseCount)
+    return stringResource(R.string.backup_contents_with_purchases, accounts, transactions, categories, purchases)
+}

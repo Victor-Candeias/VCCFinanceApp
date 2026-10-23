@@ -74,6 +74,39 @@ object JsonExporter {
                     }
                 }
             }
+            putJsonArray("purchases") {
+                data.purchases.forEach { (purchase, items) ->
+                    addJsonObject {
+                        put("id", purchase.id)
+                        put("type", purchase.type.name)
+                        put("occurredAt", purchase.occurredAt.toString())
+                        put("merchantId", purchase.merchantId)
+                        put("merchantName", data.merchantName(purchase.merchantId).ifEmpty { null })
+                        put("paymentMethod", purchase.paymentMethod?.name)
+                        put("accountId", purchase.accountId)
+                        put("categoryId", purchase.categoryId)
+                        put("transactionId", purchase.transactionId)
+                        put("totalMinor", purchase.totalMinor)
+                        put("currency", purchase.currency)
+                        put("notes", purchase.notes)
+                        putJsonArray("items") {
+                            items.sortedBy { it.position }.forEach { item ->
+                                addJsonObject {
+                                    put("name", item.name)
+                                    put("productId", item.productId)
+                                    put("quantity", item.quantity.stripTrailingZeros().toPlainString())
+                                    put("unit", item.unit)
+                                    put("unitPriceMinor", item.unitPriceMinor)
+                                    put("discountMinor", item.discountMinor)
+                                    put("totalMinor", item.totalMinor)
+                                    put("categoryName", item.categoryName)
+                                    put("priceSource", item.priceSource.name)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             putJsonArray("totals") {
                 data.totals.forEach { totals ->
                     addJsonObject { putTotals(totals.currency, totals.income.amountMinor, totals.expenses.amountMinor) }

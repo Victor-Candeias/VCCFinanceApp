@@ -32,8 +32,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import pt.vcc.financeapp.core.model.Money
+import pt.vcc.financeapp.core.model.PurchaseReport
+import pt.vcc.financeapp.core.model.PurchaseTotal
 import pt.vcc.financeapp.core.model.ReportPeriodType
 import pt.vcc.financeapp.feature.finance.R
+import pt.vcc.financeapp.feature.finance.purchases.labelRes
 import pt.vcc.financeapp.feature.finance.ui.ChartBarGroup
 import pt.vcc.financeapp.feature.finance.ui.ChartPalette
 import pt.vcc.financeapp.feature.finance.ui.ChartSlice
@@ -132,6 +135,41 @@ private fun ReportBody(content: ReportContent, currencies: List<String>, onSelec
     )
     if (content.monthly.isNotEmpty()) MonthlySection(content)
     AccountSection(content.byAccount)
+    content.purchases?.let { PurchasesSection(it, content.merchantNames) }
+}
+
+/** Compras do período: os totais por pagamento coincidem com as despesas das contas debitadas. */
+@Composable
+private fun PurchasesSection(report: PurchaseReport, merchantNames: Map<String, String>) {
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.reports_purchases_title), style = MaterialTheme.typography.titleMedium)
+            Text(
+                pluralStringResource(R.plurals.reports_purchases_count, report.purchaseCount, report.purchaseCount, report.total.formatted()),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            val noMethod = stringResource(R.string.reports_purchases_no_method)
+            PurchaseGroup(stringResource(R.string.reports_purchases_by_payment), report.byPaymentMethod, report.total) { method ->
+                method?.let { stringResource(it.labelRes) } ?: noMethod
+            }
+            PurchaseGroup(stringResource(R.string.reports_purchases_by_type), report.byType, report.total) { stringResource(it.labelRes) }
+            val noMerchant = stringResource(R.string.purchase_no_merchant)
+            PurchaseGroup(stringResource(R.string.reports_purchases_by_merchant), report.byMerchant, report.total) { id ->
+                id?.let(merchantNames::get) ?: noMerchant
+            }
+            PurchaseGroup(stringResource(R.string.reports_purchases_top_products), report.byProduct, report.total) { it }
+        }
+    }
+}
+
+@Composable
+private fun <K> PurchaseGroup(title: String, lines: List<PurchaseTotal<K>>, total: Money, label: @Composable (K) -> String) {
+    if (lines.isEmpty()) return
+    HorizontalDivider()
+    Text(title, style = MaterialTheme.typography.titleSmall)
+    lines.forEachIndexed { index, line ->
+        CategoryLine(label(line.key), line.total, percent(line.total.amountMinor, total.amountMinor), ChartPalette[index % ChartPalette.size])
+    }
 }
 
 @Composable

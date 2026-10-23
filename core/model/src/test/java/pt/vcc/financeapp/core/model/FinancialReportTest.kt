@@ -61,6 +61,48 @@ class FinancialReportTest {
         assertTrue(FinancialReport.build(ReportPeriod.year(2024), transactions, zone).isEmpty())
     }
 
+    @Test
+    fun purchaseTotalsByPaymentMatchTheAccountExpenses() {
+        fun purchase(id: String, tx: String?, method: PaymentMethod, type: PurchaseType, merchant: String?) = Purchase(
+            id = id, type = type, status = PurchaseStatus.COMPLETED, occurredAt = Instant.parse("2026-02-10T12:00:00Z"),
+            merchantId = merchant, paymentMethod = method, transactionId = tx, createdAt = Instant.EPOCH, updatedAt = Instant.EPOCH,
+        )
+        fun item(purchase: String, name: String, price: Long, product: String? = null) =
+            PurchaseItem(id = "$purchase-$name", purchaseId = purchase, name = name, quantity = java.math.BigDecimal.ONE, unitPriceMinor = price, productId = product)
+        val transactions = listOf(
+            tx("t-mb", TransactionType.EXPENSE, 1_250, "food", account = "bank").copy(source = TransactionSource.PURCHASE),
+            tx("t-cash", TransactionType.EXPENSE, 300, "food", account = "wallet").copy(source = TransactionSource.PURCHASE),
+            tx("t-cash-2", TransactionType.EXPENSE, 200, "food", account = "wallet").copy(source = TransactionSource.PURCHASE),
+            tx("t-manual", TransactionType.EXPENSE, 5_000, "food", account = "bank"),
+            tx("t-old", TransactionType.EXPENSE, 999, "food", date = "2026-03-01T00:00:00Z").copy(source = TransactionSource.PURCHASE),
+        )
+        val purchases = listOf(
+            purchase("p1", "t-mb", PaymentMethod.MB, PurchaseType.QUICK, "pingo"),
+            purchase("p2", "t-cash", PaymentMethod.CASH, PurchaseType.EXPRESS, null),
+            purchase("p3", "t-cash-2", PaymentMethod.CASH, PurchaseType.EXPRESS, null),
+            purchase("p4", "t-old", PaymentMethod.MB, PurchaseType.QUICK, "pingo"),
+            purchase("p5", null, PaymentMethod.MB, PurchaseType.QUICK, "pingo"),
+        )
+        val items = listOf(
+            item("p1", "Leite", 950, "milk"), item("p1", "Pão", 300),
+            item("p2", "Café", 300, "coffee"), item("p3", "café ", 200), item("p4", "Leite", 999, "milk"),
+        )
+        val report = FinancialReport.build(ReportPeriod.month(YearMonth.of(2026, 2)), transactions, zone).single()
+
+        val purchasesReport = PurchaseReport.from(report, purchases, items)!!
+
+        assertEquals(Money(1_750, "EUR"), purchasesReport.total)
+        assertEquals(3, purchasesReport.purchaseCount)
+        val byAccount = report.byAccount.associate { it.accountId to it.totals.expenses.amountMinor }
+        val byMethod = purchasesReport.byPaymentMethod.associate { it.key to it.total.amountMinor }
+        assertEquals(mapOf(PaymentMethod.MB to 1_250L, PaymentMethod.CASH to 500L), byMethod)
+        assertEquals(byAccount.getValue("wallet"), byMethod.getValue(PaymentMethod.CASH))
+        assertEquals(listOf(PurchaseTotal(PurchaseType.QUICK, Money(1_250, "EUR"), 1), PurchaseTotal(PurchaseType.EXPRESS, Money(500, "EUR"), 2)), purchasesReport.byType)
+        assertEquals(listOf<String?>("pingo", null), purchasesReport.byMerchant.map { it.key })
+        assertEquals(listOf("Leite" to 950L, "Café" to 300L, "Pão" to 300L, "café" to 200L), purchasesReport.byProduct.map { it.key to it.total.amountMinor })
+        assertEquals(null, PurchaseReport.from(report, emptyList(), emptyList()))
+    }
+
     private fun tx(
         id: String,
         type: TransactionType,
