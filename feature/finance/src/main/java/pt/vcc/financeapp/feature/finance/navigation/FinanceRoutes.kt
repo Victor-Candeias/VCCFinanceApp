@@ -61,3 +61,6 @@ data object MerchantsRoute
 
 @Serializable
 data object CatalogRoute
+
+@Serializable
+data class PurchaseRoute(val purchaseId: String)

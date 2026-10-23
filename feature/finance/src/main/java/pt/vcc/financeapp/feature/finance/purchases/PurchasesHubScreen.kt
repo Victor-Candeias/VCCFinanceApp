@@ -38,6 +38,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import pt.vcc.financeapp.core.data.usecase.GetOrCreateActivePurchaseUseCase
+import pt.vcc.financeapp.core.model.PurchaseType
 import pt.vcc.financeapp.core.data.repository.MerchantRepository
 import pt.vcc.financeapp.core.data.repository.PurchaseRepository
 import pt.vcc.financeapp.core.data.repository.ShoppingListRepository
@@ -63,7 +66,13 @@ class PurchasesHubViewModel @Inject constructor(
     purchaseRepository: PurchaseRepository,
     merchantRepository: MerchantRepository,
     shoppingListRepository: ShoppingListRepository,
+    private val getOrCreateActive: GetOrCreateActivePurchaseUseCase,
 ) : ViewModel() {
+    /** Retoma a compra em curso do [type] (ou cria uma) e devolve o id em [onReady]. */
+    fun start(type: PurchaseType, onReady: (String) -> Unit) {
+        viewModelScope.launch { onReady(getOrCreateActive(type).id) }
+    }
+
     val uiState: StateFlow<PurchasesHubUiState> = combine(
         purchaseRepository.observeAllActive(),
         merchantRepository.observeAll(),
@@ -84,7 +93,7 @@ class PurchasesHubViewModel @Inject constructor(
 @Composable
 fun PurchasesHubScreen(
     onBack: () -> Unit,
-    onQuickPurchase: () -> Unit,
+    onOpenPurchase: (String) -> Unit,
     onShoppingLists: () -> Unit,
     onExpressPurchase: () -> Unit,
     onResume: (Purchase) -> Unit,
@@ -94,6 +103,7 @@ fun PurchasesHubScreen(
     modifier: Modifier = Modifier,
     viewModel: PurchasesHubViewModel = hiltViewModel(),
 ) {
+    val onQuickPurchase = { viewModel.start(PurchaseType.QUICK, onOpenPurchase) }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     PurchaseScaffold(stringResource(R.string.purchases_title), onBack, modifier) { padding ->
         if (state.isLoading) {

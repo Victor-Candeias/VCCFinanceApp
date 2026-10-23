@@ -3,8 +3,10 @@ package pt.vcc.financeapp.feature.finance.navigation
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
+import pt.vcc.financeapp.core.model.PurchaseType
 import pt.vcc.financeapp.feature.finance.purchases.CatalogScreen
 import pt.vcc.financeapp.feature.finance.purchases.MerchantsScreen
+import pt.vcc.financeapp.feature.finance.purchases.PurchaseScreen
 import pt.vcc.financeapp.feature.finance.purchases.PurchasesHubScreen
 
 /** Destinos das Compras (Sprint 8). */
@@ -13,15 +15,21 @@ internal fun NavGraphBuilder.purchasesGraph(navController: NavController) {
     composable<PurchasesRoute> {
         PurchasesHubScreen(
             onBack = back,
-            onQuickPurchase = {},
+            onOpenPurchase = { navController.navigate(PurchaseRoute(it)) },
             onShoppingLists = {},
             onExpressPurchase = {},
-            onResume = {},
+            onResume = { purchase ->
+                when (purchase.type) {
+                    PurchaseType.QUICK, PurchaseType.PLANNED -> navController.navigate(PurchaseRoute(purchase.id))
+                    PurchaseType.EXPRESS -> Unit
+                }
+            },
             onHistory = {},
             onMerchants = { navController.navigate(MerchantsRoute) },
             onCatalog = { navController.navigate(CatalogRoute) },
         )
     }
+    composable<PurchaseRoute> { PurchaseScreen(onBack = back, onClosed = back) }
     composable<MerchantsRoute> { MerchantsScreen(onBack = back) }
     composable<CatalogRoute> { CatalogScreen(onBack = back) }
 }
