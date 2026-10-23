@@ -4,6 +4,7 @@ import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import pt.vcc.financeapp.core.model.PurchaseType
+import pt.vcc.financeapp.feature.finance.purchases.BarcodeScannerScreen
 import pt.vcc.financeapp.feature.finance.purchases.CatalogScreen
 import pt.vcc.financeapp.feature.finance.purchases.ExpressPurchaseScreen
 import pt.vcc.financeapp.feature.finance.purchases.MerchantsScreen
@@ -34,7 +35,10 @@ internal fun NavGraphBuilder.purchasesGraph(navController: NavController) {
             onCatalog = { navController.navigate(CatalogRoute) },
         )
     }
-    composable<PurchaseRoute> { PurchaseScreen(onBack = back, onClosed = back) }
+    composable<PurchaseRoute> {
+        PurchaseScreen(onBack = back, onClosed = back, onScan = { navController.navigate(BarcodeScannerRoute(it)) })
+    }
+    composable<BarcodeScannerRoute> { BarcodeScannerScreen(onBack = back) }
     composable<ExpressPurchaseRoute> { ExpressPurchaseScreen(onBack = back, onClosed = back) }
     composable<PurchaseHistoryRoute> {
         PurchaseHistoryScreen(onBack = back, onOpenPurchase = { navController.navigate(PurchaseDetailRoute(it)) })

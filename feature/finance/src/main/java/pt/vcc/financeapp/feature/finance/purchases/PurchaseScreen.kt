@@ -80,6 +80,7 @@ fun PurchaseScreen(
     onBack: () -> Unit,
     onClosed: () -> Unit,
     modifier: Modifier = Modifier,
+    onScan: ((String) -> Unit)? = null,
     viewModel: PurchaseViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -103,6 +104,9 @@ fun PurchaseScreen(
         modifier = modifier,
         snackbarHostState = snackbar,
         actions = {
+            if (purchase?.status == PurchaseStatus.ACTIVE && onScan != null) {
+                TextButton(onClick = { onScan(purchase.id) }) { Text(stringResource(R.string.scanner_open)) }
+            }
             if (purchase?.status == PurchaseStatus.ACTIVE) {
                 IconButton(onClick = { viewModel.onShowDialog(PurchaseDialog.CANCEL) }) {
                     Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.purchase_cancel))

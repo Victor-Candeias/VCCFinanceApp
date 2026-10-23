@@ -41,6 +41,14 @@ dependencies {
     implementation(libs.lifecycle.runtime.compose)
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.activity.compose)
+
+    // Scanner: câmara e leitura de códigos no dispositivo (modelo incluído, sem rede).
+    implementation(libs.camera.core)
+    implementation(libs.camera.camera2)
+    implementation(libs.camera.lifecycle)
+    implementation(libs.camera.view)
+    implementation(libs.mlkit.barcode.scanning)
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)

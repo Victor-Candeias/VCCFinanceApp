@@ -79,3 +79,6 @@ data object PurchaseHistoryRoute
 
 @Serializable
 data class PurchaseDetailRoute(val purchaseId: String)
+
+@Serializable
+data class BarcodeScannerRoute(val purchaseId: String)
