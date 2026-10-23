@@ -327,15 +327,30 @@ class PurchaseViewModel @Inject constructor(
                 ),
             )
             when (result) {
-                is SavePurchaseItemResult.Saved -> local.update { it.copy(editor = ItemEditorState()) }
+                is SavePurchaseItemResult.Saved -> {
+                    resyncCompleted()
+                    local.update { it.copy(editor = ItemEditorState()) }
+                }
                 is SavePurchaseItemResult.Invalid -> local.update { it.copy(editor = it.editor.copy(errors = result.errors)) }
             }
         }
     }
 
+    /**
+     * Compra concluída: cada alteração de itens ou cabeçalho volta a gravar o movimento associado (mesmo método,
+     * conta, categoria e data), para que compra e movimento nunca fiquem dessincronizados.
+     */
+    private suspend fun resyncCompleted() {
+        val purchase = purchaseRepository.getById(purchaseId)?.takeIf { it.status == PurchaseStatus.COMPLETED } ?: return
+        val method = purchase.paymentMethod ?: return
+        val accountId = purchase.accountId ?: return
+        completePurchase(CompletePurchaseInput(purchaseId, method, accountId, purchase.categoryId))
+    }
+
     fun onRemoveItem(item: PurchaseItem) {
         viewModelScope.launch {
             purchaseRepository.removeItem(purchaseId, item.id)
+            resyncCompleted()
             local.update { state ->
                 state.copy(
                     removedItem = item,
@@ -349,6 +364,7 @@ class PurchaseViewModel @Inject constructor(
         val item = local.value.removedItem ?: return
         viewModelScope.launch {
             purchaseRepository.saveItem(item)
+            resyncCompleted()
             local.update { it.copy(removedItem = null) }
         }
     }
@@ -362,6 +378,7 @@ class PurchaseViewModel @Inject constructor(
     fun onMerchantChosen(name: String?) {
         viewModelScope.launch {
             editHeader.setMerchant(purchaseId, name)
+            resyncCompleted()
             local.update { it.copy(dialog = null) }
         }
     }

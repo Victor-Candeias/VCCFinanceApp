@@ -73,3 +73,9 @@ data class ShoppingListRoute(val listId: String)
 
 @Serializable
 data class ExpressPurchaseRoute(val purchaseId: String)
+
+@Serializable
+data object PurchaseHistoryRoute
+
+@Serializable
+data class PurchaseDetailRoute(val purchaseId: String)

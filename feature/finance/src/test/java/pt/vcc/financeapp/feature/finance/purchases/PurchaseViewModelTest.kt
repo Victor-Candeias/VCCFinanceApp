@@ -228,6 +228,26 @@ class PurchaseViewModelTest {
     }
 
     @Test
+    fun editingItemsOfCompletedPurchaseResyncsItsTransaction() = runTest {
+        purchases.create(purchase, emptyList())
+        val first = viewModel()
+        first.addItem("Leite", "1,90")
+        first.onStartFinish()
+        first.onConfirmFinish()
+        val txId = purchases.getById("p-1")!!.transactionId!!
+
+        val vm = viewModel()
+        vm.addItem("Pão", "0,60")
+        assertEquals(Money(250, "EUR"), transactions.transactions.value.single().amount)
+
+        vm.onRemoveItem(vm.uiState.value.items.first { it.name == "Leite" })
+        val tx = transactions.transactions.value.single()
+        assertEquals(txId, tx.id)
+        assertEquals(Money(60, "EUR"), tx.amount)
+        assertEquals(PurchaseStatus.COMPLETED, purchases.getById("p-1")!!.status)
+    }
+
+    @Test
     fun cancellingMarksPurchaseCancelledWithoutTransaction() = runTest {
         purchases.create(purchase, emptyList())
         val vm = viewModel()
