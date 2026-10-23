@@ -676,6 +676,7 @@
     <string name="express_favorites">Favoritos</string>
     <string name="express_all_products">Todos</string>
     <string name="express_add_product">Adicionar %1$s</string>
+    <string name="express_in_cart">%1$s no carrinho</string>
     <string name="express_add_temporary">Adicionar «%1$s» (temporário)</string>
     <string name="express_no_products">Nenhum produto encontrado.</string>
     <string name="express_items_empty">Toque num produto para o adicionar.</string>

@@ -27,5 +27,5 @@ status: draft
 | S8-09 | OCR de preços com confirmação explícita | done | 2026-10-23 |  | low | 2026-10-23 |  | sprint-8/S8-08 |  |
 | S8-10 | Open Food Facts e Open Prices (requer decisão sobre permissão INTERNET) | backlog | 2026-10-23 |  | low |  |  | sprint-8/S8-08 |  |
 | S8-11 | Compras em relatórios, orçamentos, exportação e backup | done | 2026-10-23 |  | medium | 2026-10-23 |  | sprint-8/S8-07 |  |
-| S8-12 | Testes de aceitação, acessibilidade, documentação e APK das Compras | backlog | 2026-10-23 |  | medium |  |  | sprint-8/S8-05, sprint-8/S8-11 |  |
+| S8-12 | Testes de aceitação, acessibilidade, documentação e APK das Compras | done | 2026-10-23 |  | medium | 2026-10-23 |  | sprint-8/S8-05, sprint-8/S8-11 |  |
 <!-- /maestru:work-items-list -->

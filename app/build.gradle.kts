@@ -7,8 +7,8 @@ plugins {
     alias(libs.plugins.hilt)
 }
 
-val appVersionCode = 4
-val appVersionName = "0.4.0"
+val appVersionCode = 5
+val appVersionName = "0.5.0"
 
 // Release signing credentials live outside git: root keystore.properties (gitignored) or
 // ~/.keystores/vcc-finance-release.properties. Without them the release APK is left unsigned.

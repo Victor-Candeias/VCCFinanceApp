@@ -262,7 +262,12 @@ private fun ProductGrid(products: List<Product>, state: ExpressUiState, viewMode
     ) {
         products.forEach { product ->
             val quantity = state.quantities[product.id]
-            val description = stringResource(R.string.express_add_product, product.name)
+            val inCart = quantity?.let { stringResource(R.string.express_in_cart, it.formattedQuantity()) }
+            val description = listOfNotNull(
+                stringResource(R.string.express_add_product, product.name),
+                product.defaultPriceMinor?.let { Money(it, state.currency).formatted() },
+                inCart,
+            ).joinToString(", ")
             OutlinedCard(
                 onClick = { viewModel.onProductTap(product) },
                 modifier = Modifier.weight(1f).heightIn(min = 72.dp).semantics { contentDescription = description },

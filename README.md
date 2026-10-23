@@ -709,6 +709,8 @@ Importar `collectAsStateWithLifecycle` de Lifecycle Compose; assegurar as depend
 
 **Implementação (S3-06):** contas do tipo Dinheiro (`AccountType.CASH`) têm saldo próprio como qualquer outra conta. Um **levantamento** é uma transferência interna (S3-04) para uma conta Dinheiro: o menu de adicionar em Movimentos tem a opção "Levantamento", que abre `TransferEditorRoute(withdrawal = true)` com destino limitado a contas Dinheiro, origem pré-selecionada na conta por omissão (ou na primeira conta que não seja Dinheiro) e descrição "Levantamento"; não conta como receita nem despesa. A **conta por omissão** é a coluna `accounts.isDefault` (Room v4, `MIGRATION_3_4`), marcada no editor da conta; `AccountDao.setDefault` garante uma única conta marcada e desativar a conta retira a marca. O editor de receitas/despesas pré-seleciona essa conta. Por estar na base de dados, entra no backup; backups antigos restauram com `isDefault = 0`.
 
+**Compras (Sprint 8):** as compras entram pelo atalho do Início ou por Mais → Compras (`PurchasesRoute`, grafo `purchasesGraph` em `PurchasesNavigation.kt`), sem novo separador na barra inferior. O hub abre a compra rápida (`PurchaseRoute`), as listas (`ShoppingListsRoute` → `ShoppingListRoute`; iniciar a compra planeada abre `PurchaseRoute`), a despesa rápida (`ExpressPurchaseRoute`), o histórico (`PurchaseHistoryRoute` → `PurchaseDetailRoute`), os estabelecimentos (`MerchantsRoute`) e o catálogo (`CatalogRoute`). Numa compra em curso, "Ler código" abre `BarcodeScannerRoute(purchaseId)`. Concluir uma compra pede a forma de pagamento: **MB** (débito numa conta bancária ativa) ou **Dinheiro** (conta `CASH`), e cria um único movimento de despesa nessa conta.
+
 ## 10. Autenticação, PIN e biometria
 
 Componentes: `PinManager`, `BiometricAuthenticator`, `SessionManager` e `SecurityPreferences`.
@@ -929,6 +931,15 @@ Adicionar testes unitários (cálculo financeiro e regras), testes de Room em di
 - [ ] Rever privacidade, política de dados e requisitos Google Play.
 - [ ] Preparar autenticação multiutilizador e isolamento de dados no backend.
 
+### Sprint 8 — Compras (modos do VCCSmartShopcart)
+- [x] Modelo de dados v5 (`MIGRATION_4_5`), catálogo de produtos e estabelecimentos.
+- [x] Compra rápida, compra por lista e despesa rápida, com pagamento por MB (conta bancária) ou Dinheiro (conta `CASH`).
+- [x] Histórico, edição e eliminação de compras (movimento atualizado/apagado em conjunto).
+- [x] Leitor de códigos de barras e preço da etiqueta por OCR, no dispositivo e sem rede.
+- [x] Compras em relatórios, orçamentos, exportação e backup.
+- [ ] Pesquisa de produtos em bases de dados online (S8-10), adiada: exige a permissão `INTERNET`.
+- [ ] Testes manuais em dispositivo (TalkBack, câmara, instalação do APK).
+
 ## 16. Preparação para futura publicação
 
 Desde o início: UUIDs, migrations, isolamento por camadas, interfaces de integração, histórico de importações/sincronização, backup seguro, minimização de dados, testes automatizados, CI/CD e documentação. Não introduzir prematuramente Firebase Authentication, MongoDB, Redis ou infraestrutura cloud; a primeira versão não depende deles. Para publicação, avaliar políticas Google Play, proteção de dados, consentimentos e requisitos regulatórios aplicáveis.
@@ -963,3 +974,6 @@ A primeira milestone deve produzir um **projeto Android Studio compilável** com
 | 23/10/2026 | Alertas de orçamento apenas dentro da app (cartão no Início e cores no ecrã de Orçamentos). Notificações do sistema ficam adiadas: exigem a permissão `POST_NOTIFICATIONS` e trabalho em segundo plano (WorkManager, S7-04), e a app é usada só localmente. |
 | 23/10/2026 | Exportações sem bibliotecas: XLSX escrito como ZIP + XML (`inlineStr`, sem Apache POI) e PDF com `android.graphics.pdf.PdfDocument`. Os ficheiros exportados não são encriptados (destinam-se a outras aplicações) e excluem o IBAN; a cópia de segurança encriptada fica no backup (S6-05). O JSON de exportação não é o formato de backup. |
 | 23/10/2026 | Backup próprio em vez do Auto Backup do Android: ficheiro `.vccbackup` cifrado com palavra-passe do utilizador (PBKDF2-HMAC-SHA256 600 000 iterações + AES-256-GCM), portável entre dispositivos. Restauro é sempre substituição integral numa transação (sem fusão de dados). Não se pede o PIN de novo antes de criar/restaurar: a app já está desbloqueada e o backup exige a sua própria palavra-passe; reautenticação fica para revisão conjunta com as exportações. |
+| 23/10/2026 | Compras do VCCSmartShopcart integradas como despesas normais: cada compra concluída gera um único movimento `source = PURCHASE` na conta paga (MB = conta bancária ativa; Dinheiro = conta `CASH`), atualizado ou apagado com a compra. Relatórios, orçamentos e saldos partem desse movimento, sem contar os itens à parte. As compras ficam em Mais → Compras e no Início, sem sexto separador. |
+| 23/10/2026 | Sem tabelas `price_captures` nem `product_price_history`: o preço lido por OCR fica só no item (`PriceSource.OCR`) e as sugestões de preço são calculadas a partir dos itens das compras concluídas. A foto da etiqueta nunca é gravada. |
+| 23/10/2026 | Câmara (CameraX + ML Kit com modelos incluídos na app) sem rede: a app continua sem a permissão `INTERNET`. A pesquisa de produtos online (Open Food Facts, S8-10) fica adiada até haver decisão explícita sobre essa permissão. |
