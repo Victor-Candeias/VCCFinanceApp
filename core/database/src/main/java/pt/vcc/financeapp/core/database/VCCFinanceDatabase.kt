@@ -13,6 +13,7 @@ import pt.vcc.financeapp.core.database.dao.FinancialConnectionDao
 import pt.vcc.financeapp.core.database.dao.ImportBatchDao
 import pt.vcc.financeapp.core.database.dao.ImportProfileDao
 import pt.vcc.financeapp.core.database.dao.MerchantDao
+import pt.vcc.financeapp.core.database.dao.PurchaseDao
 import pt.vcc.financeapp.core.database.dao.RecurringTransactionDao
 import pt.vcc.financeapp.core.database.dao.SyncHistoryDao
 import pt.vcc.financeapp.core.database.dao.TransactionDao
@@ -26,6 +27,13 @@ import pt.vcc.financeapp.core.database.entity.FinancialConnectionEntity
 import pt.vcc.financeapp.core.database.entity.ImportBatchEntity
 import pt.vcc.financeapp.core.database.entity.ImportProfileEntity
 import pt.vcc.financeapp.core.database.entity.MerchantEntity
+import pt.vcc.financeapp.core.database.entity.ProductCategoryEntity
+import pt.vcc.financeapp.core.database.entity.ProductEntity
+import pt.vcc.financeapp.core.database.entity.PurchaseEntity
+import pt.vcc.financeapp.core.database.entity.PurchaseItemEntity
+import pt.vcc.financeapp.core.database.entity.PurchaseSkippedItemEntity
+import pt.vcc.financeapp.core.database.entity.ShoppingListEntity
+import pt.vcc.financeapp.core.database.entity.ShoppingListItemEntity
 import pt.vcc.financeapp.core.database.entity.RecurringTransactionEntity
 import pt.vcc.financeapp.core.database.entity.SyncHistoryEntity
 import pt.vcc.financeapp.core.database.entity.TransactionEntity
@@ -46,6 +54,13 @@ import pt.vcc.financeapp.core.database.entity.TransactionRuleEntity
         AttachmentEntity::class,
         AccountBalanceSnapshotEntity::class,
         ImportProfileEntity::class,
+        ProductCategoryEntity::class,
+        ProductEntity::class,
+        ShoppingListEntity::class,
+        ShoppingListItemEntity::class,
+        PurchaseEntity::class,
+        PurchaseItemEntity::class,
+        PurchaseSkippedItemEntity::class,
     ],
     version = VCCFinanceDatabase.VERSION,
     exportSchema = true,
@@ -65,9 +80,10 @@ abstract class VCCFinanceDatabase : RoomDatabase() {
     abstract fun attachmentDao(): AttachmentDao
     abstract fun accountBalanceSnapshotDao(): AccountBalanceSnapshotDao
     abstract fun importProfileDao(): ImportProfileDao
+    abstract fun purchaseDao(): PurchaseDao
 
     companion object {
-        const val VERSION = 4
+        const val VERSION = 5
         const val NAME = "vcc_finance.db"
     }
 }

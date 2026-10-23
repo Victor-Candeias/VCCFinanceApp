@@ -14,6 +14,9 @@ enum class TransactionSource {
     QIF_IMPORT,
     BANK_SYNC,
     MEAL_CARD_SYNC,
+
+    /** Despesa gerada ao concluir uma compra (S8-02); editável apenas a partir da compra. */
+    PURCHASE,
 }
 
 enum class TransactionStatus { PENDING, BOOKED, CANCELLED }

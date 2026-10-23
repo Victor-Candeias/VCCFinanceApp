@@ -1,12 +1,17 @@
 package pt.vcc.financeapp.core.database.converters
 
 import androidx.room.TypeConverter
+import java.math.BigDecimal
 import pt.vcc.financeapp.core.model.AccountType
 import pt.vcc.financeapp.core.model.BalanceSource
 import pt.vcc.financeapp.core.model.BudgetPeriod
 import pt.vcc.financeapp.core.model.ConnectionStatus
 import pt.vcc.financeapp.core.model.ImportFormat
 import pt.vcc.financeapp.core.model.ImportStatus
+import pt.vcc.financeapp.core.model.PaymentMethod
+import pt.vcc.financeapp.core.model.PriceSource
+import pt.vcc.financeapp.core.model.PurchaseStatus
+import pt.vcc.financeapp.core.model.PurchaseType
 import pt.vcc.financeapp.core.model.RecurrenceFrequency
 import pt.vcc.financeapp.core.model.RuleMatchField
 import pt.vcc.financeapp.core.model.RuleMatchType
@@ -55,4 +60,20 @@ class FinanceConverters {
 
     @TypeConverter fun balanceSourceToString(v: BalanceSource): String = v.name
     @TypeConverter fun stringToBalanceSource(v: String): BalanceSource = BalanceSource.valueOf(v)
+
+    @TypeConverter fun purchaseTypeToString(v: PurchaseType): String = v.name
+    @TypeConverter fun stringToPurchaseType(v: String): PurchaseType = PurchaseType.valueOf(v)
+
+    @TypeConverter fun purchaseStatusToString(v: PurchaseStatus): String = v.name
+    @TypeConverter fun stringToPurchaseStatus(v: String): PurchaseStatus = PurchaseStatus.valueOf(v)
+
+    @TypeConverter fun paymentMethodToString(v: PaymentMethod?): String? = v?.name
+    @TypeConverter fun stringToPaymentMethod(v: String?): PaymentMethod? = v?.let(PaymentMethod::valueOf)
+
+    @TypeConverter fun priceSourceToString(v: PriceSource): String = v.name
+    @TypeConverter fun stringToPriceSource(v: String): PriceSource = PriceSource.valueOf(v)
+
+    /** Quantidades decimais guardadas em texto para não perder precisão. */
+    @TypeConverter fun bigDecimalToString(v: BigDecimal): String = v.toPlainString()
+    @TypeConverter fun stringToBigDecimal(v: String): BigDecimal = BigDecimal(v)
 }

@@ -301,12 +301,27 @@ Cada módulo Android Library requer o seu `build.gradle.kts`, `namespace`, SDK, 
 | `attachments` | Recibos e comprovativos |
 | `account_balance_snapshots` | Saldos comunicados e datas de referência |
 
+### Tabelas das compras (v5, Sprint 8)
+
+Os modos de compra herdados do VCCSmartShopcart (`PurchaseType`: `QUICK` calculadora, `PLANNED` lista planeada, `EXPRESS` despesa rápida do catálogo) foram acrescentados pela `MIGRATION_4_5`.
+
+| Tabela | Função |
+|---|---|
+| `product_categories` | Categorias do catálogo; `financeCategoryId` aponta para a categoria de despesa do movimento (`SET_NULL`) |
+| `products` | Catálogo de produtos (preço por omissão, código de barras, favorito; `isTemporary` para produtos criados numa compra) |
+| `shopping_lists` / `shopping_list_items` | Listas planeadas e respetivos itens (`CASCADE`) |
+| `purchases` | Compra: tipo, estado (`ACTIVE`/`COMPLETED`/`CANCELLED`), estabelecimento (`merchants`), pagamento (`PaymentMethod`: `MB`/`CASH`) e conta (`RESTRICT`); `transactionId` único liga ao movimento gerado |
+| `purchase_items` | Itens com quantidade decimal (texto, `BigDecimal`), preço unitário, desconto e total em cêntimos (`CASCADE`) |
+| `purchase_skipped_items` | Itens de uma lista planeada marcados como "não comprado" numa compra |
+
+Não há tabela de histórico de preços: as sugestões ("último preço pago", no mesmo estabelecimento ou em qualquer um) são calculadas a partir dos itens das compras concluídas. Uma compra concluída com total > 0 gera um movimento `EXPENSE` com `source = PURCHASE`, gravado na mesma transação SQL da compra (`PurchaseDao.persistWithTransaction`). O catálogo inicial (`DefaultProductCatalog`) é semeado no arranque com IDs estáveis, depois das categorias de sistema.
+
 ### Tipos de conta e movimento
 
 ```kotlin
 enum class AccountType { BANK_ACCOUNT, MEAL_CARD, CREDIT_CARD, CASH, SAVINGS, OTHER }
 enum class TransactionType { INCOME, EXPENSE, TRANSFER }
-enum class TransactionSource { MANUAL, CSV_IMPORT, EXCEL_IMPORT, OFX_IMPORT, QIF_IMPORT, BANK_SYNC, MEAL_CARD_SYNC }
+enum class TransactionSource { MANUAL, CSV_IMPORT, EXCEL_IMPORT, OFX_IMPORT, QIF_IMPORT, BANK_SYNC, MEAL_CARD_SYNC, PURCHASE }
 enum class TransactionStatus { PENDING, BOOKED, CANCELLED }
 enum class ConnectionStatus { DISCONNECTED, PENDING_AUTHORIZATION, CONNECTED, EXPIRED, ERROR }
 ```

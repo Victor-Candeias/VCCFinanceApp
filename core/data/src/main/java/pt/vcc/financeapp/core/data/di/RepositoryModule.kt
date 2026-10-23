@@ -12,7 +12,15 @@ import pt.vcc.financeapp.core.data.importer.ContentResolverDocumentReader
 import pt.vcc.financeapp.core.data.importer.DocumentReader
 import pt.vcc.financeapp.core.data.repository.AccountRepository
 import pt.vcc.financeapp.core.data.repository.BudgetRepository
+import pt.vcc.financeapp.core.data.repository.CatalogRepository
 import pt.vcc.financeapp.core.data.repository.CategoryRepository
+import pt.vcc.financeapp.core.data.repository.LocalCatalogRepository
+import pt.vcc.financeapp.core.data.repository.LocalMerchantRepository
+import pt.vcc.financeapp.core.data.repository.LocalPurchaseRepository
+import pt.vcc.financeapp.core.data.repository.LocalShoppingListRepository
+import pt.vcc.financeapp.core.data.repository.MerchantRepository
+import pt.vcc.financeapp.core.data.repository.PurchaseRepository
+import pt.vcc.financeapp.core.data.repository.ShoppingListRepository
 import pt.vcc.financeapp.core.data.repository.ImportBatchRepository
 import pt.vcc.financeapp.core.data.repository.ImportProfileRepository
 import pt.vcc.financeapp.core.data.repository.LocalAccountRepository
@@ -52,4 +60,16 @@ internal abstract class RepositoryModule {
 
     @Binds
     abstract fun bindBudgetRepository(implementation: LocalBudgetRepository): BudgetRepository
+
+    @Binds
+    abstract fun bindPurchaseRepository(implementation: LocalPurchaseRepository): PurchaseRepository
+
+    @Binds
+    abstract fun bindCatalogRepository(implementation: LocalCatalogRepository): CatalogRepository
+
+    @Binds
+    abstract fun bindShoppingListRepository(implementation: LocalShoppingListRepository): ShoppingListRepository
+
+    @Binds
+    abstract fun bindMerchantRepository(implementation: LocalMerchantRepository): MerchantRepository
 }

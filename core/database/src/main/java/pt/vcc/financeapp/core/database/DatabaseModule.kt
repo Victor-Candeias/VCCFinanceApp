@@ -19,6 +19,7 @@ import pt.vcc.financeapp.core.database.dao.FinancialConnectionDao
 import pt.vcc.financeapp.core.database.dao.ImportBatchDao
 import pt.vcc.financeapp.core.database.dao.ImportProfileDao
 import pt.vcc.financeapp.core.database.dao.MerchantDao
+import pt.vcc.financeapp.core.database.dao.PurchaseDao
 import pt.vcc.financeapp.core.database.dao.RecurringTransactionDao
 import pt.vcc.financeapp.core.database.dao.SyncHistoryDao
 import pt.vcc.financeapp.core.database.dao.TransactionDao
@@ -58,6 +59,7 @@ object DatabaseModule {
     @Provides fun importProfileDao(db: VCCFinanceDatabase): ImportProfileDao = db.importProfileDao()
     @Provides fun transactionRuleDao(db: VCCFinanceDatabase): TransactionRuleDao = db.transactionRuleDao()
     @Provides fun attachmentDao(db: VCCFinanceDatabase): AttachmentDao = db.attachmentDao()
+    @Provides fun purchaseDao(db: VCCFinanceDatabase): PurchaseDao = db.purchaseDao()
 
     @Provides
     fun accountBalanceSnapshotDao(db: VCCFinanceDatabase): AccountBalanceSnapshotDao = db.accountBalanceSnapshotDao()

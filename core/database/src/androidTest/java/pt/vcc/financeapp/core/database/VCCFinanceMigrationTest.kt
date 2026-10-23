@@ -12,6 +12,10 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import pt.vcc.financeapp.core.database.entity.ImportProfileEntity
+import pt.vcc.financeapp.core.database.entity.PurchaseEntity
+import pt.vcc.financeapp.core.model.PaymentMethod
+import pt.vcc.financeapp.core.model.PurchaseStatus
+import pt.vcc.financeapp.core.model.PurchaseType
 
 /**
  * Cria a base de dados a partir do schema exportado mais antigo e abre-a com o Room atual e
@@ -74,6 +78,17 @@ class VCCFinanceMigrationTest {
         assertNull(snapshot?.importBatchId)
         // v4: contas existentes não ficam marcadas como conta por omissão.
         assertEquals(false, database.accountDao().getById("acc-1")?.isDefault)
+        // v5: tabelas das compras criadas vazias; uma compra concluída liga-se ao movimento existente.
+        val purchaseDao = database.purchaseDao()
+        assertEquals(emptyList<Any>(), purchaseDao.getAllPurchases())
+        val purchase = PurchaseEntity(
+            id = "pur-1", type = PurchaseType.QUICK, status = PurchaseStatus.COMPLETED, occurredAt = 1760000000000,
+            currency = "EUR", totalMinor = 123456, merchantId = null, shoppingListId = null, budgetMinor = null,
+            paymentMethod = PaymentMethod.MB, accountId = "acc-1", categoryId = null, transactionId = "tx-1",
+            notes = null, createdAt = 0, updatedAt = 0, completedAt = 0,
+        )
+        purchaseDao.upsertPurchase(purchase)
+        assertEquals(purchase, purchaseDao.getPurchaseByTransaction("tx-1"))
     }
 
     private companion object {

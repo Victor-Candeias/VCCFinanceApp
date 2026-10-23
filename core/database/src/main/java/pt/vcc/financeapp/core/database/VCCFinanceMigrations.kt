@@ -47,5 +47,80 @@ object VCCFinanceMigrations {
         }
     }
 
-    val ALL: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+    /** 4 → 5: catálogo, listas planeadas e compras pagas por MB ou Dinheiro (S8-01). */
+    val MIGRATION_4_5: Migration = object : Migration(4, 5) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `product_categories` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `icon` TEXT, `financeCategoryId` TEXT, `sortOrder` INTEGER NOT NULL, `isActive` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`financeCategoryId`) REFERENCES `categories`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_product_categories_financeCategoryId` ON `product_categories` (`financeCategoryId`)",
+            )
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `products` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `productCategoryId` TEXT, `barcode` TEXT, `brand` TEXT, `defaultPriceMinor` INTEGER, `unit` TEXT, `isFavorite` INTEGER NOT NULL, `isActive` INTEGER NOT NULL, `isTemporary` INTEGER NOT NULL, `sortOrder` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`productCategoryId`) REFERENCES `product_categories`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_products_productCategoryId` ON `products` (`productCategoryId`)",
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_products_barcode` ON `products` (`barcode`)",
+            )
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `shopping_lists` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `budgetMinor` INTEGER, `isArchived` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+            )
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `shopping_list_items` (`id` TEXT NOT NULL, `listId` TEXT NOT NULL, `name` TEXT NOT NULL, `quantity` TEXT NOT NULL, `unit` TEXT, `estimatedPriceMinor` INTEGER, `productId` TEXT, `position` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`listId`) REFERENCES `shopping_lists`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`productId`) REFERENCES `products`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_shopping_list_items_listId` ON `shopping_list_items` (`listId`)",
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_shopping_list_items_productId` ON `shopping_list_items` (`productId`)",
+            )
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `purchases` (`id` TEXT NOT NULL, `type` TEXT NOT NULL, `status` TEXT NOT NULL, `occurredAt` INTEGER NOT NULL, `currency` TEXT NOT NULL, `totalMinor` INTEGER NOT NULL, `merchantId` TEXT, `shoppingListId` TEXT, `budgetMinor` INTEGER, `paymentMethod` TEXT, `accountId` TEXT, `categoryId` TEXT, `transactionId` TEXT, `notes` TEXT, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `completedAt` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`merchantId`) REFERENCES `merchants`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL , FOREIGN KEY(`shoppingListId`) REFERENCES `shopping_lists`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL , FOREIGN KEY(`accountId`) REFERENCES `accounts`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`categoryId`) REFERENCES `categories`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL , FOREIGN KEY(`transactionId`) REFERENCES `transactions`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_purchases_type_status` ON `purchases` (`type`, `status`)",
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_purchases_occurredAt` ON `purchases` (`occurredAt`)",
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_purchases_merchantId` ON `purchases` (`merchantId`)",
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_purchases_shoppingListId` ON `purchases` (`shoppingListId`)",
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_purchases_accountId` ON `purchases` (`accountId`)",
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_purchases_categoryId` ON `purchases` (`categoryId`)",
+            )
+            db.execSQL(
+                "CREATE UNIQUE INDEX IF NOT EXISTS `index_purchases_transactionId` ON `purchases` (`transactionId`)",
+            )
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `purchase_items` (`id` TEXT NOT NULL, `purchaseId` TEXT NOT NULL, `name` TEXT NOT NULL, `quantity` TEXT NOT NULL, `unitPriceMinor` INTEGER NOT NULL, `discountMinor` INTEGER NOT NULL, `totalMinor` INTEGER NOT NULL, `unit` TEXT, `productId` TEXT, `shoppingListItemId` TEXT, `categoryName` TEXT, `priceSource` TEXT NOT NULL, `position` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`purchaseId`) REFERENCES `purchases`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`productId`) REFERENCES `products`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL , FOREIGN KEY(`shoppingListItemId`) REFERENCES `shopping_list_items`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_purchase_items_purchaseId` ON `purchase_items` (`purchaseId`)",
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_purchase_items_productId` ON `purchase_items` (`productId`)",
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_purchase_items_shoppingListItemId` ON `purchase_items` (`shoppingListItemId`)",
+            )
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `purchase_skipped_items` (`purchaseId` TEXT NOT NULL, `shoppingListItemId` TEXT NOT NULL, PRIMARY KEY(`purchaseId`, `shoppingListItemId`), FOREIGN KEY(`purchaseId`) REFERENCES `purchases`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`shoppingListItemId`) REFERENCES `shopping_list_items`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_purchase_skipped_items_shoppingListItemId` ON `purchase_skipped_items` (`shoppingListItemId`)",
+            )
+        }
+    }
+
+    val ALL: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
 }
