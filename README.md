@@ -42,7 +42,7 @@ A **VCCFinanceApp** permite gerir contas bancárias, cartões de refeição, din
 | Jobs | WorkManager |
 | Gráficos | Vico ou alternativa Compose compatível |
 | Documentos | Android Storage Access Framework; PDF/CSV/XLSX/JSON |
-| Câmara (compras) | CameraX + ML Kit no dispositivo (códigos de barras), sem rede |
+| Câmara (compras) | CameraX + ML Kit no dispositivo (códigos de barras e texto de etiquetas), sem rede |
 | Backend futuro | ASP.NET Core ou Ktor; integração Open Banking autorizada |
 
 **Dinheiro:** guardar montantes em `Long` como unidades mínimas da moeda (ex.: 12,50 EUR = 1250). Evitar `Float`/`Double` em cálculos financeiros. No domínio usar `Money(amountMinor: Long, currency: String)` e validar moeda/overflow.
@@ -151,6 +151,7 @@ Fixada a 19/10/2026 a partir do ambiente instalado no PC de desenvolvimento e da
 | Biometric | 1.1.0 | Confirmado |
 | CameraX | 1.6.2 | Confirmado (S8-08) |
 | ML Kit Barcode Scanning (modelo incluído na app) | 17.3.0 | Confirmado (S8-08) |
+| ML Kit Text Recognition (latino, modelo incluído) | 16.0.1 | Confirmado (S8-09) |
 | Complementares: Core KTX 1.19.1, Coroutines 1.11.0, kotlinx-serialization-json 1.11.0, JUnit 4.13.2, AndroidX Test JUnit 1.3.0, Espresso 3.7.0 | — | Confirmado |
 
 > **Notas:** o Android Studio usa por omissão a JBR 25 (`JAVA_HOME`); o ficheiro `gradle/gradle-daemon-jvm.properties` (`toolchainVersion=17`) obriga o daemon Gradle a usar um JDK 17 instalado localmente, mesmo que o launcher arranque com outra JVM. Em alternativa, configurar o **Gradle JDK = 17** (Settings → Build Tools → Gradle).
@@ -320,6 +321,8 @@ Os modos de compra herdados do VCCSmartShopcart (`PurchaseType`: `QUICK` calcula
 Não há tabela de histórico de preços: as sugestões ("último preço pago", no mesmo estabelecimento ou em qualquer um) são calculadas a partir dos itens das compras concluídas. Uma compra concluída com total > 0 gera um movimento `EXPENSE` com `source = PURCHASE`, gravado na mesma transação SQL da compra (`PurchaseDao.persistWithTransaction`). O catálogo inicial (`DefaultProductCatalog`) é semeado no arranque com IDs estáveis, depois das categorias de sistema.
 
 **Leitor de códigos de barras (S8-08):** numa compra em curso, "Ler código" abre a câmara (permissão `CAMERA` pedida só nesse momento; `uses-feature` da câmara não obrigatório). O ML Kit com modelo incluído lê EAN-8, EAN-13 e UPC-A no próprio telemóvel; as permissões `INTERNET`/`ACCESS_NETWORK_STATE` trazidas pelas bibliotecas são removidas no manifest (`tools:node="remove"`). O código é normalizado para GTIN-13 (dígito de controlo validado) e as leituras repetidas do mesmo código em 3 s são ignoradas. Um código conhecido no catálogo propõe o produto e o preço sugerido; um código desconhecido abre um produto novo, que pode ficar guardado no catálogo com o código. Nada é adicionado sem confirmação; sem câmara ou sem permissão é possível escrever o código.
+
+**Preço da etiqueta por OCR (S8-09):** no diálogo de confirmação, "Ler preço da etiqueta" fotografa com `ImageCapture` para memória (a imagem nunca é escrita em ficheiro e é libertada depois do reconhecimento). O `PriceCandidateParser` (portado do VCCSmartShopcart para `core/data/ocr`) extrai candidatos em formatos pt-PT (`1,29 €`, `€1.29`, `1€29`, euros e cêntimos em expoente) e classifica-os (preço, antigo, por kg/litro, desconto); o `ProductNameExtractor` sugere nomes para produtos novos. O preço só é aplicado quando o utilizador escolhe um candidato (`PriceSource.OCR`). Não há tabela `price_captures`: as leituras são transitórias e só o preço confirmado fica no item da compra.
 
 ### Tipos de conta e movimento
 

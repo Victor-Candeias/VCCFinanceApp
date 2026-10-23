@@ -21,6 +21,7 @@ espressoCore = "3.7.0"
 androidxTestRunner = "1.7.0"
 camerax = "1.6.2"
 mlkitBarcode = "17.3.0"
+mlkitTextRecognition = "16.0.1"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -60,6 +61,7 @@ camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "cam
 camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camerax" }
 camera-view = { module = "androidx.camera:camera-view", version.ref = "camerax" }
 mlkit-barcode-scanning = { module = "com.google.mlkit:barcode-scanning", version.ref = "mlkitBarcode" }
+mlkit-text-recognition = { module = "com.google.mlkit:text-recognition", version.ref = "mlkitTextRecognition" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

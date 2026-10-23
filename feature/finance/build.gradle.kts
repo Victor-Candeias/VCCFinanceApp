@@ -49,6 +49,7 @@ dependencies {
     implementation(libs.camera.lifecycle)
     implementation(libs.camera.view)
     implementation(libs.mlkit.barcode.scanning)
+    implementation(libs.mlkit.text.recognition)
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)

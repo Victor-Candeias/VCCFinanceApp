@@ -4,6 +4,8 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.UseCase
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,10 +31,12 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,8 +51,11 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import pt.vcc.financeapp.core.data.ocr.PriceKind
 import pt.vcc.financeapp.core.data.usecase.PurchaseItemError
 import pt.vcc.financeapp.feature.finance.R
+import pt.vcc.financeapp.core.model.Money
 import pt.vcc.financeapp.feature.finance.ui.formatted
 
 /** Lê códigos de barras com a câmara (ou escritos à mão) e adiciona os produtos à compra depois de confirmados. */
@@ -67,6 +74,21 @@ fun BarcodeScannerScreen(
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         hasCamera = granted
         denied = !granted
+    }
+    val scope = rememberCoroutineScope()
+    val imageCapture = remember {
+        ImageCapture.Builder().setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY).build()
+    }
+    val cameraUseCases = remember { listOf<UseCase>(imageCapture) }
+    val textReader = remember { LabelTextReader() }
+    DisposableEffect(textReader) { onDispose { textReader.close() } }
+    val readPrice: () -> Unit = {
+        viewModel.onPriceCaptureStarted()
+        scope.launch {
+            runCatching { textReader.read(imageCapture, ContextCompat.getMainExecutor(context)) }
+                .onSuccess(viewModel::onPriceTextRead)
+                .onFailure { viewModel.onPriceCaptureFailed() }
+        }
     }
     LaunchedEffect(state.message) {
         if (state.message == ScanMessage.ADDED) {
@@ -100,9 +122,15 @@ fun BarcodeScannerScreen(
                         scanning = state.draft == null,
                         onCode = viewModel::onCodeDetected,
                         modifier = Modifier.fillMaxSize(),
+                        useCases = cameraUseCases,
                     )
                 }
-                Text(stringResource(R.string.scanner_hint), style = MaterialTheme.typography.bodyMedium)
+                val reading = state.priceReading
+                if (reading != null && reading.candidates == null) {
+                    PriceCaptureControls(reading, onCapture = readPrice, onCancel = viewModel::onCancelPriceReading)
+                } else {
+                    Text(stringResource(R.string.scanner_hint), style = MaterialTheme.typography.bodyMedium)
+                }
             } else {
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -143,11 +171,75 @@ fun BarcodeScannerScreen(
         }
     }
 
-    state.draft?.let { ScanDraftDialog(it, state, viewModel) }
+    val draft = state.draft
+    val reading = state.priceReading
+    when {
+        draft == null -> Unit
+        reading == null -> ScanDraftDialog(draft, state, viewModel, canReadPrice = hasCamera)
+        reading.candidates != null -> PriceChoiceDialog(reading, draft, state.total.currency, viewModel)
+    }
 }
 
 @Composable
-private fun ScanDraftDialog(draft: ScanDraft, state: BarcodeScannerUiState, viewModel: BarcodeScannerViewModel) {
+private fun PriceCaptureControls(reading: PriceReading, onCapture: () -> Unit, onCancel: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(stringResource(R.string.scanner_ocr_hint), style = MaterialTheme.typography.bodyMedium)
+        if (reading.failed) Text(stringResource(R.string.scanner_ocr_failed), color = MaterialTheme.colorScheme.error)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = onCapture, enabled = !reading.capturing) {
+                Text(stringResource(if (reading.capturing) R.string.scanner_ocr_reading else R.string.scanner_ocr_capture))
+            }
+            OutlinedButton(onClick = onCancel) { Text(stringResource(R.string.action_cancel)) }
+        }
+    }
+}
+
+/** Candidatos lidos da etiqueta: o utilizador escolhe explicitamente o preço (e, num produto novo, o nome). */
+@Composable
+private fun PriceChoiceDialog(reading: PriceReading, draft: ScanDraft, currency: String, viewModel: BarcodeScannerViewModel) {
+    AlertDialog(
+        onDismissRequest = viewModel::onCancelPriceReading,
+        title = { Text(stringResource(R.string.scanner_ocr_choose_title)) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                val candidates = reading.candidates.orEmpty().take(MAX_PRICE_CANDIDATES)
+                if (candidates.isEmpty()) Text(stringResource(R.string.scanner_ocr_no_price))
+                candidates.forEach { candidate ->
+                    val label = "${Money(candidate.cents, currency).formatted()} · ${stringResource(candidate.kind.label())}" +
+                        if (candidate == reading.suggested) " · ${stringResource(R.string.scanner_ocr_suggested)}" else ""
+                    val choose = { viewModel.onPriceCandidateChosen(candidate) }
+                    if (candidate == reading.suggested) {
+                        Button(onClick = choose, modifier = Modifier.fillMaxWidth()) { Text(label) }
+                    } else {
+                        OutlinedButton(onClick = choose, modifier = Modifier.fillMaxWidth()) { Text(label) }
+                    }
+                }
+                if (draft.isNewProduct && reading.names.isNotEmpty()) {
+                    Text(stringResource(R.string.scanner_ocr_names), style = MaterialTheme.typography.labelMedium)
+                    reading.names.forEach { name ->
+                        TextButton(onClick = { viewModel.onNameCandidateChosen(name) }) { Text(name) }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = viewModel::onRetryPriceReading) { Text(stringResource(R.string.scanner_ocr_retry)) } },
+        dismissButton = { TextButton(onClick = viewModel::onCancelPriceReading) { Text(stringResource(R.string.action_cancel)) } },
+    )
+}
+
+private const val MAX_PRICE_CANDIDATES = 6
+
+private fun PriceKind.label(): Int = when (this) {
+    PriceKind.SALE -> R.string.price_kind_sale
+    PriceKind.OLD -> R.string.price_kind_old
+    PriceKind.PER_KG -> R.string.price_kind_per_kg
+    PriceKind.PER_L -> R.string.price_kind_per_l
+    PriceKind.DISCOUNT -> R.string.price_kind_discount
+    PriceKind.UNKNOWN -> R.string.price_kind_unknown
+}
+
+@Composable
+private fun ScanDraftDialog(draft: ScanDraft, state: BarcodeScannerUiState, viewModel: BarcodeScannerViewModel, canReadPrice: Boolean) {
     fun error(vararg codes: PurchaseItemError) = codes.firstOrNull { it in draft.itemErrors }
     AlertDialog(
         onDismissRequest = viewModel::onDismissDraft,
@@ -192,6 +284,9 @@ private fun ScanDraftDialog(draft: ScanDraft, state: BarcodeScannerUiState, view
                         supportingText = quantityError?.let { { Text(it.message()) } },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     )
+                }
+                if (canReadPrice) {
+                    TextButton(onClick = viewModel::onReadPrice) { Text(stringResource(R.string.scanner_read_price)) }
                 }
                 if (draft.pendingListItems.isNotEmpty()) {
                     OptionPicker(

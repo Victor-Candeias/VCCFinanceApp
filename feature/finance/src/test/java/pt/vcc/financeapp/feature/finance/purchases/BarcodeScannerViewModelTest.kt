@@ -16,6 +16,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import pt.vcc.financeapp.core.data.ocr.OcrLine
 import pt.vcc.financeapp.core.data.testing.FakeCatalogRepository
 import pt.vcc.financeapp.core.data.testing.FakePurchaseRepository
 import pt.vcc.financeapp.core.data.testing.FakeShoppingListRepository
@@ -122,5 +123,51 @@ class BarcodeScannerViewModelTest {
         assertEquals("Iogurte", purchases.getDetail("p-1")!!.items.single().name)
         assertEquals(ean, catalog.products.value.single().barcode)
         assertEquals("", vm.uiState.value.manualCode)
+    }
+
+    @Test
+    fun labelPriceIsOnlyAppliedAfterTheUserChoosesIt() = runTest {
+        catalog.saveProduct(milk)
+        purchases.create(purchase)
+        val vm = viewModel()
+        vm.onCodeDetected(ean)
+
+        vm.onReadPrice()
+        vm.onPriceCaptureStarted()
+        vm.onPriceTextRead(listOf(OcrLine("Leite meio-gordo", 40), OcrLine("1,19 €", 120), OcrLine("1,59 €/kg", 30)))
+
+        val reading = vm.uiState.value.priceReading!!
+        assertEquals(119L, reading.suggested!!.cents)
+        assertTrue(reading.names.isEmpty())
+        assertEquals("0,95", vm.uiState.value.draft!!.price)
+
+        vm.onPriceCandidateChosen(reading.suggested!!)
+        assertNull(vm.uiState.value.priceReading)
+        assertEquals("1,19", vm.uiState.value.draft!!.price)
+        vm.onConfirm()
+
+        val item = purchases.getDetail("p-1")!!.items.single()
+        assertEquals(119L, item.unitPriceMinor)
+        assertEquals(PriceSource.OCR, item.priceSource)
+    }
+
+    @Test
+    fun labelWithoutPriceKeepsTheDraftAndAllowsRetrying() = runTest {
+        purchases.create(purchase)
+        val vm = viewModel()
+        vm.onManualCodeChange(ean)
+        vm.onSubmitManualCode()
+
+        vm.onReadPrice()
+        vm.onPriceTextRead(listOf(OcrLine("-30%"), OcrLine("5601234567890")))
+        assertTrue(vm.uiState.value.priceReading!!.failed)
+
+        vm.onPriceTextRead(listOf(OcrLine("IOGURTE GREGO", 80), OcrLine("0,89 €", 100)))
+        vm.onNameCandidateChosen(vm.uiState.value.priceReading!!.names.first())
+        assertEquals("Iogurte grego", vm.uiState.value.draft!!.name)
+
+        vm.onCancelPriceReading()
+        assertNull(vm.uiState.value.priceReading)
+        assertEquals("", vm.uiState.value.draft!!.price)
     }
 }

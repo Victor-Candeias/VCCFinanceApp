@@ -13,6 +13,10 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import pt.vcc.financeapp.core.data.ocr.OcrLine
+import pt.vcc.financeapp.core.data.ocr.PriceCandidate
+import pt.vcc.financeapp.core.data.ocr.PriceCandidateParser
+import pt.vcc.financeapp.core.data.ocr.ProductNameExtractor
 import pt.vcc.financeapp.core.data.repository.CatalogRepository
 import pt.vcc.financeapp.core.data.repository.PurchaseRepository
 import pt.vcc.financeapp.core.data.usecase.BarcodeConfirmInput
@@ -51,12 +55,25 @@ data class ScanDraft(
 
 enum class ScanMessage { INVALID_CODE, ADDED, PURCHASE_NOT_FOUND }
 
+/**
+ * Leitura do preço de uma etiqueta para o artigo em confirmação. Com [candidates] a `null` a câmara está pronta a
+ * fotografar; depois o utilizador escolhe um candidato (nunca é aplicado sozinho).
+ */
+data class PriceReading(
+    val capturing: Boolean = false,
+    val candidates: List<PriceCandidate>? = null,
+    val suggested: PriceCandidate? = null,
+    val names: List<String> = emptyList(),
+    val failed: Boolean = false,
+)
+
 data class BarcodeScannerUiState(
     val purchase: Purchase? = null,
     val itemCount: Int = 0,
     val categories: List<ProductCategory> = emptyList(),
     val manualCode: String = "",
     val draft: ScanDraft? = null,
+    val priceReading: PriceReading? = null,
     val message: ScanMessage? = null,
     val lastAddedName: String? = null,
 ) {
@@ -66,6 +83,7 @@ data class BarcodeScannerUiState(
 private data class ScannerLocal(
     val manualCode: String = "",
     val draft: ScanDraft? = null,
+    val priceReading: PriceReading? = null,
     val message: ScanMessage? = null,
     val lastAddedName: String? = null,
 )
@@ -99,6 +117,7 @@ class BarcodeScannerViewModel @Inject constructor(
                     categories = categories.filter { it.isActive },
                     manualCode = state.manualCode,
                     draft = state.draft,
+                    priceReading = state.priceReading,
                     message = state.message,
                     lastAddedName = state.lastAddedName,
                 )
@@ -162,7 +181,59 @@ class BarcodeScannerViewModel @Inject constructor(
         )
     }
 
-    fun onDismissDraft() = local.update { it.copy(draft = null) }
+    fun onDismissDraft() = local.update { it.copy(draft = null, priceReading = null) }
+
+    /** Prepara a câmara para fotografar a etiqueta do preço do artigo em confirmação. */
+    fun onReadPrice() {
+        if (local.value.draft != null) local.update { it.copy(priceReading = PriceReading()) }
+    }
+
+    fun onPriceCaptureStarted() = local.update { state ->
+        state.copy(priceReading = state.priceReading?.copy(capturing = true, failed = false))
+    }
+
+    fun onPriceTextRead(lines: List<OcrLine>) {
+        val result = PriceCandidateParser.parse(lines)
+        val names = if (local.value.draft?.isNewProduct == true) ProductNameExtractor.candidates(lines) else emptyList()
+        local.update { state ->
+            state.copy(
+                priceReading = state.priceReading?.let {
+                    if (result.candidates.isEmpty() && names.isEmpty()) {
+                        it.copy(capturing = false, failed = true)
+                    } else {
+                        it.copy(capturing = false, candidates = result.candidates, suggested = result.suggested, names = names)
+                    }
+                },
+            )
+        }
+    }
+
+    fun onPriceCaptureFailed() = local.update { state ->
+        state.copy(priceReading = state.priceReading?.copy(capturing = false, failed = true))
+    }
+
+    fun onPriceCandidateChosen(candidate: PriceCandidate) = local.update { state ->
+        state.copy(
+            priceReading = null,
+            draft = state.draft?.copy(
+                price = formatAmountInput(candidate.cents, 2),
+                priceSource = PriceSource.OCR,
+                itemErrors = emptySet(),
+            ),
+        )
+    }
+
+    fun onNameCandidateChosen(name: String) = local.update { state ->
+        state.copy(
+            draft = state.draft?.copy(name = name, itemErrors = emptySet()),
+            priceReading = state.priceReading?.copy(names = emptyList()),
+        )
+    }
+
+    /** Volta a fotografar sem perder o artigo em confirmação. */
+    fun onRetryPriceReading() = local.update { state -> state.copy(priceReading = state.priceReading?.let { PriceReading() }) }
+
+    fun onCancelPriceReading() = local.update { it.copy(priceReading = null) }
 
     fun onConfirm() {
         val draft = local.value.draft ?: return
