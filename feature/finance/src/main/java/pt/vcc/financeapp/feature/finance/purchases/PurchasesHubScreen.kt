@@ -95,7 +95,7 @@ fun PurchasesHubScreen(
     onBack: () -> Unit,
     onOpenPurchase: (String) -> Unit,
     onShoppingLists: () -> Unit,
-    onExpressPurchase: () -> Unit,
+    onOpenExpress: (String) -> Unit,
     onResume: (Purchase) -> Unit,
     onHistory: () -> Unit,
     onMerchants: () -> Unit,
@@ -104,6 +104,7 @@ fun PurchasesHubScreen(
     viewModel: PurchasesHubViewModel = hiltViewModel(),
 ) {
     val onQuickPurchase = { viewModel.start(PurchaseType.QUICK, onOpenPurchase) }
+    val onExpressPurchase = { viewModel.start(PurchaseType.EXPRESS, onOpenExpress) }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     PurchaseScaffold(stringResource(R.string.purchases_title), onBack, modifier) { padding ->
         if (state.isLoading) {

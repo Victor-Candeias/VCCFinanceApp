@@ -30,7 +30,7 @@ import pt.vcc.financeapp.core.model.TransactionType
 /**
  * Pagamento de uma compra em curso (conclusão) ou já concluída (edição).
  * [categoryId] nulo usa a categoria da compra, a do catálogo dos itens ou uma categoria por omissão do tipo de compra.
- * [date] nulo mantém a data da compra.
+ * [date] nulo mantém a data da compra; [time] (despesas rápidas) fixa também a hora.
  */
 data class CompletePurchaseInput(
     val purchaseId: String,
@@ -38,6 +38,7 @@ data class CompletePurchaseInput(
     val accountId: String,
     val categoryId: String? = null,
     val date: LocalDate? = null,
+    val time: LocalTime? = null,
 )
 
 enum class CompletePurchaseError {
@@ -95,10 +96,14 @@ class CompletePurchaseUseCase @Inject constructor(
             ?: inferCategory(purchase.type, detail.items)?.takeIf { categoryRepository.getById(it)?.type == TransactionType.EXPENSE }
 
         val now = clock.instant()
-        val occurredAt = input.date
-            ?.takeIf { it != purchase.occurredAt.atZone(clock.zone).toLocalDate() }
-            ?.atTime(LocalTime.NOON)?.atZone(clock.zone)?.toInstant()
-            ?: purchase.occurredAt
+        val currentDate = purchase.occurredAt.atZone(clock.zone).toLocalDate()
+        val occurredAt = when {
+            input.time != null -> (input.date ?: currentDate).atTime(input.time).atZone(clock.zone).toInstant()
+            else -> input.date
+                ?.takeIf { it != currentDate }
+                ?.atTime(LocalTime.NOON)?.atZone(clock.zone)?.toInstant()
+                ?: purchase.occurredAt
+        }
         val items = detail.items.sortedBy(PurchaseItem::position)
         val total = PurchaseMath.total(items)
 

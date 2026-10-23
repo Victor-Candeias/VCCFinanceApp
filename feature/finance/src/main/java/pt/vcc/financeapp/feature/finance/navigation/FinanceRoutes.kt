@@ -70,3 +70,6 @@ data object ShoppingListsRoute
 
 @Serializable
 data class ShoppingListRoute(val listId: String)
+
+@Serializable
+data class ExpressPurchaseRoute(val purchaseId: String)

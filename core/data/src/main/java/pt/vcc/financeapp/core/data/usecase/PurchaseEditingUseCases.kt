@@ -114,4 +114,16 @@ class EditPurchaseHeaderUseCase @Inject constructor(
         return purchase.copy(budgetMinor = budgetMinor?.takeIf { it > 0 }, updatedAt = clock.instant())
             .also { purchaseRepository.update(it) }
     }
+
+    /** Notas vazias são retiradas; mais de [MAX_NOTES_LENGTH] caracteres são rejeitadas. */
+    suspend fun setNotes(purchaseId: String, notes: String?): Purchase? {
+        val trimmed = notes?.trim()?.takeIf(String::isNotEmpty)
+        if (trimmed != null && trimmed.length > MAX_NOTES_LENGTH) return null
+        val purchase = purchaseRepository.getById(purchaseId) ?: return null
+        return purchase.copy(notes = trimmed, updatedAt = clock.instant()).also { purchaseRepository.update(it) }
+    }
+
+    companion object {
+        const val MAX_NOTES_LENGTH = 500
+    }
 }

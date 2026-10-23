@@ -420,7 +420,7 @@ private fun TotalBar(state: PurchaseUiState, onFinish: () -> Unit) {
 }
 
 @Composable
-private fun MerchantPickerDialog(merchants: List<Merchant>, current: String?, onChosen: (String?) -> Unit, onDismiss: () -> Unit) {
+internal fun MerchantPickerDialog(merchants: List<Merchant>, current: String?, onChosen: (String?) -> Unit, onDismiss: () -> Unit) {
     var name by rememberSaveable { mutableStateOf(current.orEmpty()) }
     val key = Merchant.normalize(name)
     val matches = merchants.filter { key.isEmpty() || key in it.normalizedName }.take(8)
