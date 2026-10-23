@@ -1,6 +1,7 @@
 package pt.vcc.financeapp.feature.finance.purchases
 
 import androidx.lifecycle.SavedStateHandle
+import java.math.BigDecimal
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
@@ -41,8 +42,10 @@ import pt.vcc.financeapp.core.model.PriceSource
 import pt.vcc.financeapp.core.model.Purchase
 import pt.vcc.financeapp.core.model.PurchaseStatus
 import pt.vcc.financeapp.core.model.PurchaseType
+import pt.vcc.financeapp.core.model.ShoppingList
+import pt.vcc.financeapp.core.model.ShoppingListItem
 import pt.vcc.financeapp.core.model.TransactionSource
-import pt.vcc.financeapp.core.security.testing.FakeFieldCipher
+import pt.vcc.financeapp.core.security.testing.FakeFieldCipher
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class PurchaseViewModelTest {
@@ -193,6 +196,35 @@ class PurchaseViewModelTest {
         assertEquals(PaymentMethod.CASH, finish.method)
         assertEquals(AccountType.CASH, accounts.accounts.value.first { it.id == finish.accountId }.type)
         assertEquals(Money(0, "EUR"), vm.uiState.value.cashShortfall)
+    }
+
+    @Test
+    fun plannedPurchaseTracksListItemsAndEstimate() = runTest {
+        lists.save(
+            ShoppingList("l-1", "Semana", createdAt = Instant.EPOCH, updatedAt = Instant.EPOCH),
+            listOf(
+                ShoppingListItem("leite", "l-1", "Leite", BigDecimal(2), estimatedPriceMinor = 95),
+                ShoppingListItem("ovos", "l-1", "Ovos", position = 1),
+            ),
+        )
+        purchases.create(purchase.copy(type = PurchaseType.PLANNED, shoppingListId = "l-1"), emptyList())
+        val vm = viewModel()
+        assertEquals(listOf("leite", "ovos"), vm.uiState.value.planned!!.toBuy.map { it.id })
+
+        vm.onListItemSelected(vm.uiState.value.planned!!.toBuy.first())
+        assertEquals(Money(190, "EUR"), vm.uiState.value.editorTotal)
+        vm.onPriceChange("1,00")
+        vm.onSaveItem()
+        vm.onSkipListItem(vm.uiState.value.planned!!.toBuy.single(), skipped = true)
+        vm.addItem("Pão", "0,50")
+
+        val planned = vm.uiState.value.planned!!
+        assertTrue(planned.toBuy.isEmpty())
+        assertEquals(listOf("Leite"), planned.added.map { it.name })
+        assertEquals(listOf("ovos"), planned.skipped.map { it.id })
+        assertEquals(listOf("Pão"), planned.extras.map { it.name })
+        assertEquals(190L, planned.estimateMinor)
+        assertEquals(Money(250, "EUR"), vm.uiState.value.total)
     }
 
     @Test

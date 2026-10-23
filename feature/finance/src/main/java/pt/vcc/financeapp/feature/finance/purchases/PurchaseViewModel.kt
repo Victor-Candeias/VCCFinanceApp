@@ -30,6 +30,8 @@ import pt.vcc.financeapp.core.data.usecase.CompletePurchaseUseCase
 import pt.vcc.financeapp.core.data.usecase.CreateCashAccountUseCase
 import pt.vcc.financeapp.core.data.usecase.EditPurchaseHeaderUseCase
 import pt.vcc.financeapp.core.data.usecase.ObserveAccountBalancesUseCase
+import pt.vcc.financeapp.core.data.usecase.PlannedProgress
+import pt.vcc.financeapp.core.data.usecase.PlannedPurchaseReducer
 import pt.vcc.financeapp.core.data.usecase.PurchaseItemError
 import pt.vcc.financeapp.core.data.usecase.PurchaseItemInput
 import pt.vcc.financeapp.core.data.usecase.SavePurchaseItemResult
@@ -79,9 +81,6 @@ data class FinishState(
     val isSaving: Boolean = false,
 )
 
-/** Item da lista de compras (modo planeado) ainda por tratar nesta compra. */
-data class PendingListItem(val item: ShoppingListItem, val isSkipped: Boolean)
-
 enum class PurchaseDialog { MERCHANT, BUDGET, CANCEL }
 
 data class PurchaseUiState(
@@ -91,7 +90,8 @@ data class PurchaseUiState(
     val items: List<PurchaseItem> = emptyList(),
     val merchantName: String? = null,
     val listName: String? = null,
-    val pendingListItems: List<PendingListItem> = emptyList(),
+    /** Só nas compras planeadas ativas: estado dos itens da lista. */
+    val planned: PlannedProgress? = null,
     val merchants: List<Merchant> = emptyList(),
     val products: List<Product> = emptyList(),
     val accounts: List<Account> = emptyList(),
@@ -214,7 +214,6 @@ class PurchaseViewModel @Inject constructor(
         }
         viewModelScope.launch {
             combine(purchaseFlow, purchaseRepository.observeItems(purchaseId), listFlow, reference, local) { purchase, items, list, ref, state ->
-                val usedListItems = items.mapNotNull { it.shoppingListItemId }.toSet()
                 PurchaseUiState(
                     isLoading = false,
                     notFound = purchase == null,
@@ -222,10 +221,8 @@ class PurchaseViewModel @Inject constructor(
                     items = items,
                     merchantName = purchase?.merchantId?.let { id -> ref.allMerchants.find { it.id == id }?.name },
                     listName = list?.first,
-                    pendingListItems = list?.second.orEmpty()
-                        .filter { it.id !in usedListItems }
-                        .map { PendingListItem(it, it.id in list!!.third) }
-                        .sortedBy { it.isSkipped },
+                    planned = list?.takeIf { purchase?.status == PurchaseStatus.ACTIVE }
+                        ?.let { (_, listItems, skipped) -> PlannedPurchaseReducer.reduce(listItems, items, skipped) },
                     merchants = ref.merchants,
                     products = ref.products,
                     accounts = ref.accounts.filter { it.isActive || it.id == purchase?.accountId },

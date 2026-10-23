@@ -50,6 +50,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -57,12 +59,14 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import pt.vcc.financeapp.core.data.usecase.CompletePurchaseError
+import pt.vcc.financeapp.core.data.usecase.PlannedProgress
 import pt.vcc.financeapp.core.data.usecase.PurchaseItemError
 import pt.vcc.financeapp.core.designsystem.components.EmptyState
 import pt.vcc.financeapp.core.model.Merchant
 import pt.vcc.financeapp.core.model.Money
 import pt.vcc.financeapp.core.model.PurchaseItem
 import pt.vcc.financeapp.core.model.PurchaseStatus
+import pt.vcc.financeapp.core.model.ShoppingListItem
 import pt.vcc.financeapp.feature.finance.R
 import pt.vcc.financeapp.feature.finance.ui.DateField
 import pt.vcc.financeapp.feature.finance.ui.DropdownField
@@ -149,39 +153,24 @@ private fun PurchaseContent(state: PurchaseUiState, viewModel: PurchaseViewModel
             item(key = "budget") { BudgetProgress(state.total, state.budget!!, remaining) }
         }
         item(key = "editor") { ItemEditor(state, viewModel) }
-        if (state.pendingListItems.isNotEmpty()) {
-            item(key = "list-title") {
-                Text(
-                    stringResource(R.string.purchase_list_pending, state.pendingListItems.count { !it.isSkipped }),
-                    style = MaterialTheme.typography.titleMedium,
-                )
+        val planned = state.planned
+        if (planned != null) {
+            item(key = "planned-progress") { PlannedProgressCard(planned, state) }
+            if (planned.toBuy.isNotEmpty()) {
+                item(key = "to-buy-title") { SectionTitle(stringResource(R.string.purchase_list_pending, planned.toBuy.size)) }
+                items(planned.toBuy, key = { "to-buy-${it.id}" }) { ListLine(it, skipped = false, state.currency, viewModel) }
             }
-            items(state.pendingListItems, key = { "list-${it.item.id}" }) { pending ->
-                ListItem(
-                    modifier = Modifier.clickable(enabled = !pending.isSkipped) { viewModel.onListItemSelected(pending.item) },
-                    headlineContent = {
-                        Text(pending.item.name, color = if (pending.isSkipped) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface)
-                    },
-                    supportingContent = {
-                        Text(
-                            listOfNotNull(
-                                "${pending.item.quantity.formattedQuantity()} ${pending.item.unit.orEmpty()}".trim(),
-                                pending.item.estimatedPriceMinor?.let { Money(it, state.currency).formatted() },
-                                stringResource(R.string.purchase_list_skipped).takeIf { pending.isSkipped },
-                            ).joinToString(" · "),
-                        )
-                    },
-                    trailingContent = {
-                        TextButton(onClick = { viewModel.onSkipListItem(pending.item, !pending.isSkipped) }) {
-                            Text(stringResource(if (pending.isSkipped) R.string.purchase_list_restore else R.string.purchase_list_skip))
-                        }
-                    },
-                )
+            if (planned.skipped.isNotEmpty()) {
+                item(key = "skipped-title") { SectionTitle(stringResource(R.string.purchase_list_skipped_title, planned.skipped.size)) }
+                items(planned.skipped, key = { "skipped-${it.id}" }) { ListLine(it, skipped = true, state.currency, viewModel) }
             }
+            item(key = "added-title") { SectionTitle(stringResource(R.string.purchase_list_added, planned.added.size)) }
+            items(planned.added, key = { it.id }) { item -> PurchaseItemRow(item, state.currency, viewModel) }
+            item(key = "extras-title") { SectionTitle(stringResource(R.string.purchase_list_extras, planned.extras.size)) }
+            items(planned.extras, key = { it.id }) { item -> PurchaseItemRow(item, state.currency, viewModel) }
+            return@LazyColumn
         }
-        item(key = "items-title") {
-            Text(stringResource(R.string.purchase_items_title, state.items.size), style = MaterialTheme.typography.titleMedium)
-        }
+        item(key = "items-title") { SectionTitle(stringResource(R.string.purchase_items_title, state.items.size)) }
         if (state.items.isEmpty()) {
             item(key = "items-empty") {
                 Text(
@@ -325,6 +314,66 @@ private fun ItemEditor(state: PurchaseUiState, viewModel: PurchaseViewModel) {
             }
         }
     }
+}
+
+@Composable
+private fun SectionTitle(text: String) {
+    Text(text, style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
+}
+
+@Composable
+private fun PlannedProgressCard(planned: PlannedProgress, state: PurchaseUiState) {
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.purchase_list_progress, planned.handledCount, planned.plannedCount))
+            LinearProgressIndicator(
+                progress = { if (planned.plannedCount == 0) 1f else planned.handledCount.toFloat() / planned.plannedCount },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            if (planned.estimateMinor > 0) {
+                EstimateText(planned.estimateMinor, state)
+            }
+        }
+    }
+}
+
+/** Estimativa da lista face ao total real da compra. */
+@Composable
+private fun EstimateText(estimateMinor: Long, state: PurchaseUiState) {
+    val difference = state.total.amountMinor - estimateMinor
+    val text = stringResource(R.string.purchase_list_estimate, Money(estimateMinor, state.currency).formatted()) + " · " +
+        stringResource(
+            if (difference > 0) R.string.purchase_list_above_estimate else R.string.purchase_list_below_estimate,
+            Money(kotlin.math.abs(difference), state.currency).formatted(),
+        )
+    Text(
+        text,
+        style = MaterialTheme.typography.bodyMedium,
+        color = if (difference > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+@Composable
+private fun ListLine(item: ShoppingListItem, skipped: Boolean, currency: String, viewModel: PurchaseViewModel) {
+    ListItem(
+        modifier = Modifier.clickable(enabled = !skipped) { viewModel.onListItemSelected(item) },
+        headlineContent = {
+            Text(item.name, color = if (skipped) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface)
+        },
+        supportingContent = {
+            Text(
+                listOfNotNull(
+                    "${item.quantity.formattedQuantity()} ${item.unit.orEmpty()}".trim(),
+                    item.estimatedPriceMinor?.let { Money(it, currency).formatted() },
+                ).joinToString(" · "),
+            )
+        },
+        trailingContent = {
+            TextButton(onClick = { viewModel.onSkipListItem(item, !skipped) }) {
+                Text(stringResource(if (skipped) R.string.purchase_list_restore else R.string.purchase_list_skip))
+            }
+        },
+    )
 }
 
 @Composable
@@ -472,6 +521,7 @@ private fun FinishDialog(state: PurchaseUiState, viewModel: PurchaseViewModel) {
                 if (CompletePurchaseError.CANCELLED in finish.errors || CompletePurchaseError.NOT_FOUND in finish.errors) {
                     Text(stringResource(R.string.purchase_not_found), color = MaterialTheme.colorScheme.error)
                 }
+                state.planned?.takeIf { it.estimateMinor > 0 }?.let { EstimateText(it.estimateMinor, state) }
             }
         },
         confirmButton = {
