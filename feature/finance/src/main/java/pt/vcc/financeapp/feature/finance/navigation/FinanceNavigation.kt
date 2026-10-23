@@ -35,8 +35,10 @@ fun NavGraphBuilder.financeGraph(
         DashboardScreen(
             onAccountsClick = onNavigateToAccounts,
             onBudgetClick = { navController.navigate(BudgetEditorRoute(it)) },
+            onPurchasesClick = { navController.navigate(PurchasesRoute) },
         )
     }
+    purchasesGraph(navController)
     composable<AccountsRoute> {
         AccountsScreen(
             onAddAccount = { navController.navigate(AccountEditorRoute()) },
@@ -100,6 +102,11 @@ fun NavGraphBuilder.financeGraph(
         SettingsScreen(
             appVersion = appVersion,
             entries = listOf(
+                SettingsEntry(
+                    stringResource(R.string.purchases_title),
+                    stringResource(R.string.purchases_entry_description),
+                    onClick = { navController.navigate(PurchasesRoute) },
+                ),
                 SettingsEntry(
                     stringResource(R.string.settings_security),
                     stringResource(R.string.settings_security_description),

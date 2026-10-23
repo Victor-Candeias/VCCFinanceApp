@@ -5,11 +5,18 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -44,6 +51,7 @@ fun DashboardScreen(
     onAccountsClick: () -> Unit,
     onBudgetClick: (String) -> Unit,
     modifier: Modifier = Modifier,
+    onPurchasesClick: () -> Unit = {},
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -68,7 +76,7 @@ fun DashboardScreen(
             )
             Button(onClick = onAccountsClick) { Text(stringResource(R.string.finance_dashboard_view_accounts)) }
         }
-        else -> DashboardContent(state, onAccountsClick, onBudgetClick, modifier)
+        else -> DashboardContent(state, onAccountsClick, onBudgetClick, onPurchasesClick, modifier)
     }
 }
 
@@ -140,7 +148,13 @@ private fun DashboardCharts(state: DashboardUiState, modifier: Modifier) {
 }
 
 @Composable
-private fun DashboardContent(state: DashboardUiState, onAccountsClick: () -> Unit, onBudgetClick: (String) -> Unit, modifier: Modifier) {
+private fun DashboardContent(
+    state: DashboardUiState,
+    onAccountsClick: () -> Unit,
+    onBudgetClick: (String) -> Unit,
+    onPurchasesClick: () -> Unit,
+    modifier: Modifier,
+) {
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -153,6 +167,11 @@ private fun DashboardContent(state: DashboardUiState, onAccountsClick: () -> Uni
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.padding(horizontal = 16.dp),
         )
+        FilledTonalButton(onClick = onPurchasesClick, modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth()) {
+            Icon(Icons.Filled.ShoppingCart, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.purchases_title))
+        }
         if (state.budgetAlerts.isNotEmpty()) {
             Text(
                 text = stringResource(R.string.dashboard_budget_alerts),

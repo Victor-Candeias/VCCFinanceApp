@@ -194,7 +194,11 @@ class FakeMerchantRepository(initial: List<Merchant> = emptyList()) : MerchantRe
     val merchants = MutableStateFlow(initial)
 
     override fun observeActive(): Flow<List<Merchant>> = merchants.map { list -> list.filter { it.isActive }.sortedBy { it.name } }
+    override fun observeAll(): Flow<List<Merchant>> =
+        merchants.map { list -> list.sortedWith(compareByDescending<Merchant> { it.isActive }.thenBy { it.name }) }
     override suspend fun getById(id: String): Merchant? = merchants.value.find { it.id == id }
+    override suspend fun findByName(name: String): Merchant? =
+        Merchant.normalize(name).let { normalized -> merchants.value.find { it.normalizedName == normalized } }
     override suspend fun findOrCreate(name: String): Merchant {
         val normalized = Merchant.normalize(name)
         merchants.value.find { it.normalizedName == normalized }?.let { existing ->

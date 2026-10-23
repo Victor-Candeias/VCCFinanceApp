@@ -165,7 +165,11 @@ internal class LocalMerchantRepository @Inject constructor(
 ) : MerchantRepository {
     override fun observeActive(): Flow<List<Merchant>> = dao.observeActive().map { it.map(MerchantEntity::asDomain) }
 
+    override fun observeAll(): Flow<List<Merchant>> = dao.observeAll().map { it.map(MerchantEntity::asDomain) }
+
     override suspend fun getById(id: String): Merchant? = dao.getById(id)?.asDomain()
+
+    override suspend fun findByName(name: String): Merchant? = dao.getByNormalizedName(Merchant.normalize(name))?.asDomain()
 
     override suspend fun findOrCreate(name: String): Merchant {
         val trimmed = name.trim()

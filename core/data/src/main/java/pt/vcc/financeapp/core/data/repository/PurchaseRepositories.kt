@@ -88,7 +88,11 @@ interface ShoppingListRepository {
 
 interface MerchantRepository {
     fun observeActive(): Flow<List<Merchant>>
+
+    /** Ativos primeiro, depois os desativados; para o ecrã de gestão. */
+    fun observeAll(): Flow<List<Merchant>>
     suspend fun getById(id: String): Merchant?
+    suspend fun findByName(name: String): Merchant?
 
     /** Estabelecimento com o mesmo nome normalizado, criado se ainda não existir (e reativado se estava inativo). */
     suspend fun findOrCreate(name: String): Merchant

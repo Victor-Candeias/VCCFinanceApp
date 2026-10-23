@@ -13,6 +13,9 @@ interface MerchantDao {
     @Query("SELECT * FROM merchants WHERE isActive = 1 ORDER BY name")
     fun observeActive(): Flow<List<MerchantEntity>>
 
+    @Query("SELECT * FROM merchants ORDER BY isActive DESC, name")
+    fun observeAll(): Flow<List<MerchantEntity>>
+
     @Query("SELECT * FROM merchants WHERE id = :id")
     suspend fun getById(id: String): MerchantEntity?
 

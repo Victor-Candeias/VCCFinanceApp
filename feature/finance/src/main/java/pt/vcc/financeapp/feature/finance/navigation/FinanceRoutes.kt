@@ -53,3 +53,11 @@ data object BudgetsRoute
 /** Editor de orçamento; [budgetId] nulo cria um orçamento novo. */
 @Serializable
 data class BudgetEditorRoute(val budgetId: String? = null)
+@Serializable
+data object PurchasesRoute
+
+@Serializable
+data object MerchantsRoute
+
+@Serializable
+data object CatalogRoute
